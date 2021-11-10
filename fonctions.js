@@ -30,6 +30,7 @@ function meshGrille(subdivisions, positionID) {
 			i + 1, i + (nb_w_grille + 1), i + (nb_w_grille + 2)
 		);
 	let ebo = EBO(new Uint32Array(indices_list));
+    let nb_sommets = indices_list.length;
 	
     // VAO : association EBO et VBO dans un seul VAO
     let vao = VAO([positionID, vbo_positions]);
@@ -45,7 +46,61 @@ function meshGrille(subdivisions, positionID) {
     return {
         draw: (draw_type) => {
             gl.bindVertexArray(vao.id);
-	        gl.drawElements(draw_type, nb_triangles*3, gl.UNSIGNED_INT, 0);
+	        gl.drawElements(draw_type, nb_sommets, gl.UNSIGNED_INT, 0);
+        }
+    };
+}
+
+function meshHerbes(vertical_subdivisions, positionID, number) {
+    let width = 1, height = 1;
+    
+    // VBO : génération des coordonnées des sommets des triangles
+	let vertices_list = [];
+    let v_step = height/vertical_subdivisions;
+    for(let y = 0; y < vertical_subdivisions; y++) {
+        let ypos = y*v_step;
+        let w = (1 - Math.pow(ypos, .8))*(width/(4*7));
+        vertices_list.push(
+            -w, ypos, 0,
+            w, ypos, 0
+        );
+    }
+    vertices_list.push(0, height - .5, 0);
+    let vbo_positions = VBO(new Float32Array(vertices_list), 3);
+
+    // EBO : génération du tableau d'indices des sommets des triangles
+	let indices_list = [], i = 0;
+    for(let y = 0; y < vertical_subdivisions - 1; y++) {
+        indices_list.push(
+            i, i + 3, i + 1,
+            i, i + 2, i + 3
+        );
+        i += 2;
+    }
+    indices_list.push(i, i + 2, i + 1);
+	let ebo = EBO(new Uint32Array(indices_list));
+    let nb_sommets = indices_list.length;
+	
+    // VAO : association EBO et VBO dans un seul VAO
+    let vao = VAO([positionID, vbo_positions]);
+
+    gl.bindVertexArray(vao.id);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ebo.id);
+
+    gl.bindVertexArray(null);
+	gl.bindBuffer(gl.ARRAY_BUFFER, null);
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+
+    // retourne de quoi pouvoir dessiner ladite grille
+    return {
+        draw: (draw_type) => {
+            gl.disable(gl.CULL_FACE);
+            Uniforms.u_number = number;
+            Uniforms.u_time = ewgl.current_time;
+            gl.bindVertexArray(vao.id);
+	        // gl.drawElements(draw_type, nb_sommets, gl.UNSIGNED_INT, 0);
+            gl.drawElementsInstanced(draw_type, nb_sommets, gl.UNSIGNED_INT, 0, number*number);
+            gl.enable(gl.CULL_FACE);
         }
     };
 }

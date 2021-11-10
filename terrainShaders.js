@@ -87,7 +87,7 @@ void main() {
     float sz = 4.;
     float texId = rand(floor(model_pos.xz*sz));
     vec2 texCoord = randOrientation(fract(model_pos.xz*sz), texId);
-    color *= texture(u_color_texture, texCoord).xyz;
+    color *= texture(u_color_texture, texCoord).xyz*.8;
 
     oFragmentColor = vec4(color, 1.);
 }`;

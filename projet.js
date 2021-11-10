@@ -2,6 +2,7 @@
 
 let skyBox = { };
 let terrain = { };
+let herbes = { };
 let planEau = { };
 let sunPosition = Vec3(0, 1, 0);
 let ambiantLight = Vec3(.39, .6, .92);
@@ -32,7 +33,6 @@ function init_wgl() {
 
 
     terrain.shaderProgram = ShaderProgram(terrain.vs_src, terrain.fs_src, 'Shader grille');
-
     terrain.mesh = meshGrille(50, terrain.shaderProgram.in.position_in);
 
     terrain.textures = [];
@@ -53,9 +53,14 @@ function init_wgl() {
         ambiantLight, Vec3(.8), Vec3(.2), 8
     );
 
+    herbes.shaderProgram = ShaderProgram(herbes.vs_src, herbes.fs_src, 'Shader herbes');
+    herbes.mesh = meshHerbes(5, herbes.shaderProgram.in.position_in, 200);
+    herbes.lightUniforms = lightFeeder(
+        sunPosition,
+        ambiantLight, Vec3(1.), Vec3(.5), 2
+    );
 
     planEau.shaderProgram = ShaderProgram(planEau.vs_src, planEau.fs_src, 'Shader eau');
-
     planEau.mesh = meshGrille(1, planEau.shaderProgram.in.position_in);
 
     planEau.texture = Texture2d();
@@ -71,8 +76,7 @@ function init_wgl() {
     ewgl.continuous_update = true;
     gl.clearColor(0, 0, 0, 1);
     gl.enable(gl.DEPTH_TEST);
-    gl.enable(gl.CULL_FACE);
-	gl.cullFace(gl.FRONT);
+    gl.enable(gl.CULL_FACE); gl.cullFace(gl.FRONT);
 }
 
 function draw_wgl() {
@@ -95,6 +99,16 @@ function draw_wgl() {
         terrain.lightUniforms(Uniforms);
     terrain.mesh.draw(gl.TRIANGLES);
 
+    herbes.shaderProgram.bind();
+        Uniforms.u_model = model_matrix;
+        Uniforms.u_view = ewgl.scene_camera.get_view_matrix();
+        Uniforms.u_projection = ewgl.scene_camera.get_projection_matrix();
+        Uniforms.u_camera_world_pos = ewgl.scene_camera.get_view_matrix().inverse().position();
+
+        Uniforms.u_height_texture = terrain.textures[1].bind(1);
+        herbes.lightUniforms(Uniforms);
+    herbes.mesh.draw(gl.TRIANGLES);
+
     planEau.shaderProgram.bind();
         Uniforms.u_model = Matrix.mult(model_matrix, Matrix.scale(2), Matrix.translate(0, .01, 0));
         Uniforms.u_view = ewgl.scene_camera.get_view_matrix();
@@ -114,6 +128,7 @@ function draw_wgl() {
 
 ewgl.loadRequiredFiles([
     "terrainShaders.js",
+    "herbesShader.js",
     "skyBoxShader.js",
     "planEauShader.js",
     "fonctions.js",
