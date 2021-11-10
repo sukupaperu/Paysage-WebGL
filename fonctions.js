@@ -1,5 +1,35 @@
 "use strict";
 
+function fboTexture(canvas) {
+    let tex = gl.createTexture();
+	gl.bindTexture(gl.TEXTURE_2D, tex);
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, canvas.width, canvas.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    return tex;
+}
+
+function fbo(textures) {
+    let fbos = [], ca = [];
+    for(let i = 0; i < textures.length; i++)
+        ca.push(gl.COLOR_ATTACHMENT0 + i);
+    for(let i = 0; i < textures.length; i++) {
+        let fbo = gl.createFramebuffer();
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0 + i, gl.TEXTURE_2D, textures[i], 0);
+        gl.drawBuffers(ca);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+        fbos.push(fbo);
+    }
+    return fbos;
+}
+
+
 function lightFeeder(position, ambiant, diffuse, specular, specular_size) {
     return (u) => {
         u.u_light_world_pos = position

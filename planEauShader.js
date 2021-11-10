@@ -13,8 +13,8 @@ out vec3 model_pos;
 out vec3 world_pos;
 
 void main() {
-    vec3 rawModelPos = position_in;
-    vec3 modelPos = (rawModelPos);
+    vec3 rawModelPos = position_in*100.;
+    vec3 modelPos = rawModelPos;
     vec4 worldPos = u_model*vec4(modelPos, 1.);
 
     tex_coord = rawModelPos.xz - .5;
@@ -64,6 +64,8 @@ vec3 phongModel(vec3 lc, vec3 nd) {
 }
 
 void main() {
+    // discard;
+
     vec2 distortion = texture(u_distortion, tex_coord + u_time*.02).xy;
 
     vec3 normal = normalize(vec3(0., 1., 0.) + vec3(distortion, 1.).xzy*.1);
