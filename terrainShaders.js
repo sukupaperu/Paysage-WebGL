@@ -56,9 +56,15 @@ uniform vec3 u_camera_world_pos;
 uniform vec3 u_light_world_pos;
 uniform vec3 u_ka;
 uniform vec3 u_kd;
-uniform vec3 u_ks;
-uniform float u_kn;
-uniform sampler2D u_color_texture;
+uniform sampler2D u_color_texture_0;
+uniform sampler2D u_color_texture_1;
+uniform sampler2D u_color_texture_2;
+
+uniform sampler2D u_normal_texture_0;
+uniform sampler2D u_normal_texture_1;
+uniform sampler2D u_normal_texture_2;
+
+uniform bool u_under_zero_rendering;
 
 float rand(in vec2 st) { return fract(sin(dot(st.xy,vec2(12.9898,78.233)))*43758.585); }
 
@@ -68,26 +74,59 @@ vec2 randOrientation(vec2 p, float r) {
     return mix(p, p.yx, step(.5, r))*s;
 }
 
-vec3 phongModel(vec3 lc) {
-    vec3 nd = world_normal;
+vec3 phongModel(vec3 n, float ks, float kn) {
+    vec3 nd = n;
 	vec3 ld = normalize(u_light_world_pos - world_pos);
     vec3 vd = normalize(world_pos - u_camera_world_pos);
     vec3 hrd = normalize(ld - vd);
 
-    vec3 ia = u_ka*lc;
-    vec3 id = u_kd*lc*max(0., dot(nd, ld));
-    vec3 is = u_ks*lc*pow(max(0., dot(nd, hrd)), u_kn);
+    vec3 ia = u_ka;
+    vec3 id = u_kd*max(0., dot(nd, ld));
+    vec3 is = vec3(ks)*pow(max(0., dot(nd, hrd)), kn);
 
     return ia + id + is;
 }
 
 void main() {
-    vec3 color = phongModel(vec3(1.));
+    if(model_pos.y < 0. && !u_under_zero_rendering)
+        discard;
 
     float sz = 4.;
     float texId = rand(floor(model_pos.xz*sz));
-    vec2 texCoord = randOrientation(fract(model_pos.xz*sz), texId);
-    color *= texture(u_color_texture, texCoord).xyz*.8;
+    vec2 texCoord = model_pos.xz*sz;
+    //randOrientation(fract(model_pos.xz*sz), texId);
+    //color *= texture(u_color_texture_0, texCoord).xyz;
+    /*color = mix(color, vec3(
+
+        1. - clamp(abs(model_pos.y)*50., 0., 1.)
+
+    ), .9);*/
+
+    vec3 c0 = texture(u_color_texture_0, texCoord).xyz;
+    vec3 c1 = texture(u_color_texture_1, texCoord).xyz;
+    vec3 c2 = texture(u_color_texture_2, texCoord).xyz;
+
+    //vec3 n0 = texture(u_normal_texture_0, texCoord).xyz;
+    vec3 n1 = texture(u_normal_texture_1, texCoord).xyz;
+    //vec3 n2 = texture(u_normal_texture_2, texCoord).xyz;
+
+    float isGravier = 1. - clamp(abs(pow((model_pos.y + .02)*20., 3.)), 0., 1.);
+
+    /*vec3 n = mix(
+        mix(n0, n2, step(model_pos.y, 0.)),
+        n1,
+        isGravier
+    );*/
+    vec3 n = n1;
+
+    vec3 normal = normalize((world_normal + normalize(n.xzy - .5))*.5);
+    vec3 color = phongModel(normal, isGravier, 200.);
+
+    color *= mix(
+        mix(c0, c2, step(model_pos.y, 0.)),
+        c1,
+        isGravier
+    );
 
     oFragmentColor = vec4(color, 1.);
 }`;

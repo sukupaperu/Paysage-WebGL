@@ -22,6 +22,12 @@ out vec4 oFragmentColor;
 uniform vec3 uMeshColor;
 uniform samplerCube u_texture_skybox;
 
+uniform float u_time;
+
+mat2 rot(float a) { return mat2(cos(a),sin(a),-sin(a),cos(a)); }
+
 void main() {
-	oFragmentColor = vec4(texture(u_texture_skybox, tex_coord).rgb, 1.);
+	vec3 stu = tex_coord;
+	stu.xz *= rot(u_time*.01);
+	oFragmentColor = vec4(texture(u_texture_skybox, stu).rgb, 1.);
 }`;

@@ -7,15 +7,19 @@ layout(location = 1) in vec3 position_in;
 uniform mat4 u_model;
 uniform mat4 u_view;
 uniform mat4 u_projection;
+
 uniform int u_number;
 uniform float u_time;
+
 uniform sampler2D u_height_texture;
 
 out vec2 tex_coord;
 out float tex_height;
+
 out vec3 model_pos;
 out vec3 world_pos;
 out vec3 world_normal;
+
 out float instance_random;
 
 
@@ -35,6 +39,8 @@ void main() {
 
     tex_height = position_in.y;
 
+    tex_coord = position_in.xy - vec2(0., .5);
+
     vec2 distribution = vec2(
         mod(float(gl_InstanceID), float(u_number)),
         float(gl_InstanceID/u_number)
@@ -51,10 +57,13 @@ void main() {
     p_in.z += cos(p_in.y*3.)*.3;
     p_in.xz += rd*.1;
 
-    mat2 randomRot = rot(rd.x*6.28);
+    mat2 randomRot = rot(rd.x*rd.y*6.28);
     p_in.xz *= randomRot;
 
-    float windStrenght = cnoise(distribution*2. + u_time*.5)*cnoise(distribution*10. + u_time*.5)*p_in.y*p_in.y*2.;
+    float windStrenght = 
+        cnoise(distribution*2. + u_time*.5)
+        *cnoise(distribution*10. + u_time*.5)
+        *p_in.y*p_in.y*3.;
     mat2 windRot = rot(windStrenght);
     p_in.xy *= windRot;
 
@@ -68,10 +77,9 @@ void main() {
     vec3 rawModelPos = vec3(distribution, 0.).xzy;
     vec3 hauteurTerrain = hauteur(rawModelPos);
     float ht = hauteurTerrain.y;
-    vec3 modelPos = p_in*(scale*clamp((ht - .03)*130., 0., 1.)) + hauteurTerrain;
+    vec3 modelPos = p_in*(scale*clamp((ht - 0.01)*130., 0., 1.)) + hauteurTerrain;
     vec4 worldPos = u_model*vec4(modelPos, 1.);
 
-    tex_coord = rawModelPos.xz;
     model_pos = modelPos;
     world_pos = worldPos.xyz;
 
@@ -81,7 +89,7 @@ void main() {
 herbes.fs_src = `#version 300 es
 precision highp float;
 
-out vec4 oFragmentColor;
+out vec4 ddd;
 
 in vec2 tex_coord;
 in float tex_height;
@@ -94,36 +102,38 @@ uniform vec3 u_camera_world_pos;
 uniform vec3 u_light_world_pos;
 uniform vec3 u_ka;
 uniform vec3 u_kd;
-uniform vec3 u_ks;
-uniform float u_kn;
-// uniform float u_time;
-// uniform sampler2D u_distortion;
-// uniform samplerCube u_texture_skybox;
+// uniform sampler2D u_color_texture;
 
 float rand(in vec2 st) { return fract(sin(dot(st.xy,vec2(12.9898,78.233)))*43758.585); }
 
-vec3 phongModel(vec3 lc, vec3 nd) {
+vec3 phongModel(vec3 n, float ks, float kn) {
+    vec3 nd = n;
 	vec3 ld = normalize(u_light_world_pos - world_pos);
     vec3 vd = normalize(world_pos - u_camera_world_pos);
     vec3 hrd = normalize(ld - vd);
 
-    vec3 ia = u_ka*lc;
-    vec3 id = u_kd*lc*max(0., dot(nd, ld));
-    vec3 is = u_ks*lc*pow(max(0., dot(nd, hrd)), u_kn);
+    vec3 ia = u_ka;
+    vec3 id = u_kd*max(0., dot(nd, ld));
+    vec3 is = vec3(ks)*pow(max(0., dot(nd, hrd)), kn);
 
-    return ia + id + is;
+    return ia*2. + id*.5 + is;
 }
 
 void main() {
+    /*const float texRatio = (512./2.)/512.;
+    vec2 texCoordSelect = tex_coord - vec2(texRatio*floor(instance_random*-2.4454) + texRatio*.5, .51);
+    vec4 tex = texture(u_color_texture, texCoordSelect).rgba;
+    if(tex.a < .5)
+        discard;
+    vec3 albedo = tex.rgb;*/
+
     vec3 color = mix(
         vec3(.2, 1., .2)*.2,
-        mix(vec3(0.317,1.000,0.289), vec3(0.729,1.000,0.305), instance_random),
+        mix(vec3(0.208,0.825,0.289), vec3(0.962,1.000,0.410), instance_random),
         vec3(tex_height)
     );
 
-    //color = world_normal;
+    color *= phongModel(world_normal, .1, 2.);
 
-    color = phongModel(color*1.2, world_normal);
-
-    oFragmentColor = vec4(color, 1.);
+    ddd = vec4(color, /*tex.a*/ 1.);
 }`;

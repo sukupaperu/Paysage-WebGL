@@ -13,11 +13,11 @@ out vec3 model_pos;
 out vec3 world_pos;
 
 void main() {
-    vec3 rawModelPos = position_in*100.;
+    vec3 rawModelPos = position_in;
     vec3 modelPos = rawModelPos;
     vec4 worldPos = u_model*vec4(modelPos, 1.);
 
-    tex_coord = rawModelPos.xz - .5;
+    tex_coord = worldPos.xz - .5;
     model_pos = modelPos;
     world_pos = worldPos.xyz;
 
@@ -34,14 +34,15 @@ in vec3 model_pos;
 in vec3 world_pos;
 
 uniform vec3 u_camera_world_pos;
-uniform vec3 u_light_world_pos;
+/*uniform vec3 u_light_world_pos;
 uniform vec3 u_ka;
-uniform vec3 u_kd;
-uniform vec3 u_ks;
-uniform float u_kn;
+uniform vec3 u_kd;*/
+
 uniform float u_time;
+uniform vec2 u_resolution;
 uniform sampler2D u_distortion;
-uniform samplerCube u_texture_skybox;
+uniform sampler2D u_reflexion;
+uniform sampler2D u_refraction;
 
 float rand(in vec2 st) { return fract(sin(dot(st.xy,vec2(12.9898,78.233)))*43758.585); }
 
@@ -51,7 +52,7 @@ vec2 randOrientation(vec2 p, float r) {
     return mix(p, p.yx, step(.5, r))*s;
 }
 
-vec3 phongModel(vec3 lc, vec3 nd) {
+/*vec3 phongModel(vec3 lc, vec3 nd) {
 	vec3 ld = normalize(u_light_world_pos - world_pos);
     vec3 vd = normalize(world_pos - u_camera_world_pos);
     vec3 hrd = normalize(ld - vd);
@@ -61,28 +62,24 @@ vec3 phongModel(vec3 lc, vec3 nd) {
     vec3 is = u_ks*lc*pow(max(0., dot(nd, hrd)), u_kn);
 
     return ia + id + is;
-}
+}*/
 
 void main() {
-    // discard;
+    vec2 distortion = ((texture(u_distortion, tex_coord*5. + u_time*.016).xy - .5)*(texture(u_distortion, tex_coord*1. - u_time*.04).xy - .5)*(texture(u_distortion, tex_coord*.5 + u_time*.02).xy - .5)*.8);
 
-    vec2 distortion = texture(u_distortion, tex_coord + u_time*.02).xy;
+    vec2 screen_pos = gl_FragCoord.xy/u_resolution.xy;
 
-    vec3 normal = normalize(vec3(0., 1., 0.) + vec3(distortion, 1.).xzy*.1);
-    //vec3 color = phongModel(vec3(1.), normal);
+    float lgt = clamp(length(max(abs(screen_pos - .5) - .49, 0.)) - .01,0.,1.); // pour réduire distortions sur les bords de l'écran
 
-
+    vec3 normal = normalize(vec3(0., 1., 0.) + vec3(distortion, 1.).xzy);
     vec3 vd = normalize(world_pos - u_camera_world_pos);
-    vec3 skyboxReflectColor = texture(
-        u_texture_skybox, reflect(vd, normal)
-    ).rgb;
+    float a = clamp(dot(vd, normal)*.5 + .5, 0., 1.);
 
-    vec3 color = skyboxReflectColor;
-    //color = mix(color, vec3(distortion, 1.), .9);
-    /*float sz = 20.;
-    float texId = rand(floor(model_pos.xz*sz));
-    vec2 texCoord = randOrientation(fract(model_pos.xz*sz), texId);
-    color *= texture(u_color_texture, (texCoord)).xyz;*/
+    vec2 d_screen_pos = screen_pos + distortion*(1. - lgt);
+    vec3 refraction = texture(u_refraction, d_screen_pos).rgb;
+    vec3 reflexion = texture(u_reflexion, d_screen_pos).rgb;
+    vec3 color = mix(refraction, reflexion, clamp(a*a*4.5,0.,1.));
+    //color = mix(color, reflexion, .999);
 
     oFragmentColor = vec4(color, 1.);
 }`;

@@ -1,42 +1,45 @@
 "use strict";
 
-function fboTexture(canvas) {
-    let tex = gl.createTexture();
-	gl.bindTexture(gl.TEXTURE_2D, tex);
-	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, canvas.width, canvas.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
-    gl.bindTexture(gl.TEXTURE_2D, null);
-    return tex;
-}
-
-function fbo(textures) {
-    let fbos = [], ca = [];
-    for(let i = 0; i < textures.length; i++)
-        ca.push(gl.COLOR_ATTACHMENT0 + i);
-    for(let i = 0; i < textures.length; i++) {
-        let fbo = gl.createFramebuffer();
-
-        gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0 + i, gl.TEXTURE_2D, textures[i], 0);
-        gl.drawBuffers(ca);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-
-        fbos.push(fbo);
-    }
+function initFBOs(textures) {
+    let fbos = [];
+    for(let i = 0; i < textures.length; i++) 
+        fbos.push(FBO(textures[i]));
     return fbos;
 }
 
+function loadTexture(path) {
+    let t = Texture2d();
+    t.simple_params(gl.LINEAR, gl.REPEAT);
+    t.load(path);
+    return t;
+}
 
-function lightFeeder(position, ambiant, diffuse, specular, specular_size) {
+function loadTextureWA(path) {
+    let t = Texture2d();
+    t.simple_params(gl.LINEAR, gl.REPEAT);
+    t.load(path, gl.RGBA8);
+    return t;
+}
+
+function initTextureForFBO(w, h) {
+    let t = Texture2d();
+    t.simple_params(gl.LINEAR, gl.REPEAT);
+    t.alloc(w, h, gl.RGBA8);
+    return t;
+}
+
+function setMvpUniforms(u, m, v, p, c) {
+    u.u_model = m;
+    u.u_view = v;
+    u.u_projection = p;
+    u.u_camera_world_pos = c;
+}
+
+function lightFeeder(position, ambiant, diffuse) {
     return (u) => {
         u.u_light_world_pos = position
         u.u_ka = ambiant,
-        u.u_kd = diffuse,
-        u.u_ks = specular,
-        u.u_kn = specular_size
+        u.u_kd = diffuse
     };
 }
 
@@ -82,14 +85,15 @@ function meshGrille(subdivisions, positionID) {
 }
 
 function meshHerbes(vertical_subdivisions, positionID, number) {
-    let width = 1, height = 1;
+    let width = 1. /*(512/2)/512*/, height = 1;
     
     // VBO : génération des coordonnées des sommets des triangles
 	let vertices_list = [];
     let v_step = height/vertical_subdivisions;
-    for(let y = 0; y < vertical_subdivisions; y++) {
+    for(let y = 0; y <= vertical_subdivisions; y++) {
         let ypos = y*v_step;
         let w = (1 - Math.pow(ypos, .8))*(width/(4*7));
+        //let w = width/2;
         vertices_list.push(
             -w, ypos, 0,
             w, ypos, 0
@@ -100,7 +104,7 @@ function meshHerbes(vertical_subdivisions, positionID, number) {
 
     // EBO : génération du tableau d'indices des sommets des triangles
 	let indices_list = [], i = 0;
-    for(let y = 0; y < vertical_subdivisions - 1; y++) {
+    for(let y = 0; y < vertical_subdivisions; y++) {
         indices_list.push(
             i, i + 3, i + 1,
             i, i + 2, i + 3
@@ -123,13 +127,20 @@ function meshHerbes(vertical_subdivisions, positionID, number) {
 
     // retourne de quoi pouvoir dessiner ladite grille
     return {
-        draw: (draw_type) => {
-            gl.disable(gl.CULL_FACE);
-            Uniforms.u_number = number;
+        draw: (draw_type, fact) => {
+            let n = Math.floor(fact*number);
+
+            Uniforms.u_number = n;
             Uniforms.u_time = ewgl.current_time;
+
             gl.bindVertexArray(vao.id);
+
+            gl.disable(gl.CULL_FACE);
+            //gl.enable(gl.BLEND);
+            //gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+            gl.drawElementsInstanced(draw_type, nb_sommets, gl.UNSIGNED_INT, 0, n*n);
 	        // gl.drawElements(draw_type, nb_sommets, gl.UNSIGNED_INT, 0);
-            gl.drawElementsInstanced(draw_type, nb_sommets, gl.UNSIGNED_INT, 0, number*number);
+            //gl.disable(gl.BLEND);
             gl.enable(gl.CULL_FACE);
         }
     };
