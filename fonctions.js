@@ -21,17 +21,20 @@ function initTextureForFBO(w = 0, h = 0, type = gl.RGB8) {
     return t;
 }
 
-function setMvpUniforms(u, m, v, p, c) {
+function setMvpUniforms(u, m, v, p) {
     u.u_model = m;
     u.u_view = v;
     u.u_projection = p;
-    u.u_camera_world_pos = c;
+}
+
+function setCameraPosUniform(u, v) {
+    u.u_camera_world_pos = v.inverse().position();
 }
 
 function setLightUniforms(u, o) {
-        u.u_light_world_pos = o.position;
-        u.u_ka = o.ambiant;
-        u.u_kd = o.diffuse;
+    u.u_light_dir = o.direction;
+    u.u_ka = o.ambiant;
+    u.u_kd = o.diffuse;
 }
 
 function setTimeUniform(u) {
@@ -82,7 +85,7 @@ function meshGrille(subdivisions, positionID) {
     };
 }
 
-function meshHerbes(vertical_subdivisions, positionID, number) {
+function meshHerbes(vertical_subdivisions, number, positionID) {
     let width = 1. /*(512/2)/512*/, height = 1;
     
     // VBO : génération des coordonnées des sommets des triangles
@@ -135,4 +138,49 @@ function meshHerbes(vertical_subdivisions, positionID, number) {
             gl.enable(gl.CULL_FACE);
         }
     };
+}
+
+function meshParticules(number, positionID) {
+    let width = 1., height = 1;
+
+    // VBO : génération des coordonnées des sommets des triangles
+    let vertices_list = [
+        -width*.5, -width*.5, 0.,
+        width*.5, -width*.5, 0.,
+        -width*.5, width*.5, 0.,
+        width*.5, width*.5, 0.
+    ];
+    let vbo_positions = VBO(new Float32Array(vertices_list), 3);
+
+    // EBO : génération du tableau d'indices des sommets des triangles
+    let indices_list = [0, 1, 2, 1, 3, 2];
+    let ebo = EBO(new Uint32Array(indices_list));
+    let nb_sommets = indices_list.length;
+	
+    // VAO : association EBO et VBO dans un seul VAO
+    let vao = VAO([positionID, vbo_positions]);
+
+    gl.bindVertexArray(vao.id);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ebo.id);
+
+    gl.bindVertexArray(null);
+	gl.bindBuffer(gl.ARRAY_BUFFER, null);
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+
+    return {
+        draw: (draw_type) => {
+            let n = number;
+
+            Uniforms.u_number = n;
+
+            gl.bindVertexArray(vao.id);
+
+            gl.enable(gl.BLEND);
+			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+            gl.disable(gl.CULL_FACE);
+            gl.drawElementsInstanced(draw_type, nb_sommets, gl.UNSIGNED_INT, 0, n*n);
+            gl.enable(gl.CULL_FACE);
+            gl.disable(gl.BLEND);
+        }
+    }
 }

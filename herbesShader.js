@@ -8,7 +8,7 @@ uniform mat4 u_model;
 uniform mat4 u_view;
 uniform mat4 u_projection;
 
-uniform int u_number;
+uniform float u_number;
 uniform float u_time;
 
 uniform sampler2D u_height_texture;
@@ -42,9 +42,9 @@ void main() {
     tex_coord = position_in.xy - vec2(0., .5);
 
     vec2 distribution = vec2(
-        mod(float(gl_InstanceID), float(u_number)),
-        float(gl_InstanceID/u_number)
-    )/float(u_number) - .5;
+        mod(float(gl_InstanceID), u_number),
+        float(gl_InstanceID/int(u_number))
+    )/u_number - .5;
 
     vec2 rd = vec2(rand(distribution), rand(distribution*-.678));
 
@@ -55,7 +55,7 @@ void main() {
 
     vec3 p_in = position_in;
     p_in.z += cos(p_in.y*3.)*.3;
-    p_in.xz += rd*.1;
+    p_in.xz += rd*.2;
 
     mat2 randomRot = rot(rd.x*rd.y*6.28);
     p_in.xz *= randomRot;
@@ -77,7 +77,7 @@ void main() {
     vec3 rawModelPos = vec3(distribution, 0.).xzy;
     vec3 hauteurTerrain = hauteur(rawModelPos);
     float ht = hauteurTerrain.y;
-    vec3 modelPos = p_in*(scale*clamp((ht - 0.01)*130., 0., 1.)) + hauteurTerrain;
+    vec3 modelPos = p_in*(scale*clamp((ht - 0.03)*130., 0., 1.)) + hauteurTerrain;
     vec4 worldPos = u_model*vec4(modelPos, 1.);
 
     model_pos = modelPos;
@@ -99,7 +99,7 @@ in vec3 world_normal;
 in float instance_random;
 
 uniform vec3 u_camera_world_pos;
-uniform vec3 u_light_world_pos;
+uniform vec3 u_light_dir;
 uniform vec3 u_ka;
 uniform vec3 u_kd;
 // uniform sampler2D u_color_texture;
@@ -108,7 +108,7 @@ float rand(in vec2 st) { return fract(sin(dot(st.xy,vec2(12.9898,78.233)))*43758
 
 vec3 phongModel(vec3 n, float ks, float kn) {
     vec3 nd = n;
-	vec3 ld = normalize(u_light_world_pos - world_pos);
+	vec3 ld = normalize(u_light_dir);
     vec3 vd = normalize(world_pos - u_camera_world_pos);
     vec3 hrd = normalize(ld - vd);
 

@@ -13,16 +13,18 @@ function initMeshObject() {
 }
 
 const nb_herbes = 200;
+const nb_particules = 10;
 
 const skyBox = initMeshObject();
 const terrain = initMeshObject();
 const herbes = initMeshObject();
 const planEau = initMeshObject();
+const particules = initMeshObject();
 
 const lights = {
-    position: Vec3(0,1,0),
+    direction: Vec3(10, 8, 0),
     ambiant: Vec3(.5),
-    diffuse: Vec3(1.)
+    diffuse: Vec3(1)
 };
 const model_matrix = Mat4();
 
@@ -32,8 +34,8 @@ function init_wgl() {
     skyBox.mesh = Mesh.Cube().renderer(1);
     skyBox.texture = TextureCubeMap();
     skyBox.texture.load(["textures/skybox/skybox1/right.bmp", "textures/skybox/skybox1/left.bmp", "textures/skybox/skybox1/top.bmp", "textures/skybox/skybox1/bottom.bmp", "textures/skybox/skybox1/front.bmp", "textures/skybox/skybox1/back.bmp"]);
-    // skyBox.texture.load([ "textures/skybox/skybox2/right.png", "textures/skybox/skybox2/left.png", "textures/skybox/skybox2/top.png", "textures/skybox/skybox2/bottom.png", "textures/skybox/skybox2/back.png", "textures/skybox/skybox2/front.png"]);
-    // skyBox.texture.load([ "textures/skybox/skybox3/px.webp", "textures/skybox/skybox3/nx.webp", "textures/skybox/skybox3/py.webp", "textures/skybox/skybox3/ny.webp", "textures/skybox/skybox3/pz.webp", "textures/skybox/skybox3/nz.webp"]);
+    //skyBox.texture.load([ "textures/skybox/skybox2/right.png", "textures/skybox/skybox2/left.png", "textures/skybox/skybox2/top.png", "textures/skybox/skybox2/bottom.png", "textures/skybox/skybox2/back.png", "textures/skybox/skybox2/front.png"]);
+    //skyBox.texture.load([ "textures/skybox/skybox3/px.webp", "textures/skybox/skybox3/nx.webp", "textures/skybox/skybox3/py.webp", "textures/skybox/skybox3/ny.webp", "textures/skybox/skybox3/pz.webp", "textures/skybox/skybox3/nz.webp"]);
 
     terrain.shaderProgram = ShaderProgram(terrain.vs_src, terrain.fs_src, 'Shader grille');
     terrain.mesh = meshGrille(30, terrain.shaderProgram.in.position_in);
@@ -44,12 +46,12 @@ function init_wgl() {
         terrain.textures[3] = loadTexture("textures/material/gravier_albedo.png");
         terrain.textures[4] = loadTexture("textures/material/sable_albedo.png");
 
-        // terrain.textures[5] = loadTexture("textures/material/terre_normal.png");
+        //terrain.textures[5] = loadTexture("textures/material/terre_normal.png");
         terrain.textures[6] = loadTexture("textures/material/gravier_normal.png");
-        // terrain.textures[7] = loadTexture("textures/material/sable_normal.png");
+        //terrain.textures[7] = loadTexture("textures/material/sable_normal.png");
 
     herbes.shaderProgram = ShaderProgram(herbes.vs_src, herbes.fs_src, 'Shader herbes');
-    herbes.mesh = meshHerbes(6, herbes.shaderProgram.in.position_in, nb_herbes);
+    herbes.mesh = meshHerbes(6, nb_herbes, herbes.shaderProgram.in.position_in);
     // herbes.texture = loadTextureWA("textures/material/herbes.png");
 
     planEau.shaderProgram = ShaderProgram(planEau.vs_src, planEau.fs_src, 'Shader eau');
@@ -60,6 +62,8 @@ function init_wgl() {
     planEau.textures[2] = initTextureForFBO();
     planEau.fbos = initFBOs([1,2].map(i => planEau.textures[i]));
     
+    particules.shaderProgram = ShaderProgram(particules.vs_src, particules.fs_src, 'Shader particules');
+    particules.mesh = meshParticules(nb_particules, particules.shaderProgram.in.position_in);
 
     // paramètres WebGL
     gl.clearColor(0, 0, 0, 1);
@@ -76,13 +80,16 @@ function resize_wgl(w, h) {
 }
 
 function draw_wgl() {
-    let view_matrix, skybox_matrix, projection_matrix, camera_world_position;
+    let view_matrix, skybox_matrix, projection_matrix;
+        
+    /*view_matrix = ewgl.scene_camera.get_view_matrix();
+    projection_matrix = ewgl.scene_camera.get_projection_matrix();*/
 
     /*
         pass 0 : rendu reflexion
         pass 1 : rendu refraction
         pass 2 : rendu framebuffer par défaut
-    */ 
+    */
     for(let pass = 0; pass <= 2; pass++) {
         
         view_matrix = ewgl.scene_camera.get_view_matrix();
@@ -108,8 +115,6 @@ function draw_wgl() {
                 break;
         }
 
-        camera_world_position = view_matrix.inverse().position();
-
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     
         skyBox.shaderProgram.bind();
@@ -119,7 +124,8 @@ function draw_wgl() {
         skyBox.mesh.draw(gl.TRIANGLES);
 
         terrain.shaderProgram.bind();
-            setMvpUniforms(Uniforms, model_matrix, view_matrix, projection_matrix, camera_world_position);
+            setMvpUniforms(Uniforms, model_matrix, view_matrix, projection_matrix);
+            setCameraPosUniform(Uniforms, view_matrix);
             setLightUniforms(Uniforms, lights);
             Uniforms.u_height_texture = terrain.textures[0].bind(0);
             Uniforms.u_normal_texture = terrain.textures[1].bind(1);
@@ -131,12 +137,13 @@ function draw_wgl() {
             Uniforms.u_normal_texture_1 = terrain.textures[6].bind(6);
             //Uniforms.u_normal_texture_2 = terrain.textures[7].bind(7);
 
-            Uniforms.u_under_zero_rendering = pass == 1;
+            Uniforms.u_under_zero_rendering = pass >= 1;
         terrain.mesh.draw(gl.TRIANGLES);
         
         if(pass != 1) {
             herbes.shaderProgram.bind();
-                setMvpUniforms(Uniforms, model_matrix, view_matrix, projection_matrix, camera_world_position);
+                setMvpUniforms(Uniforms, model_matrix, view_matrix, projection_matrix);
+                setCameraPosUniform(Uniforms, view_matrix);
                 setLightUniforms(Uniforms, lights);
                 setTimeUniform(Uniforms);
                 Uniforms.u_height_texture = terrain.textures[0].bind(0);
@@ -146,7 +153,8 @@ function draw_wgl() {
     }
 
     planEau.shaderProgram.bind();
-        setMvpUniforms(Uniforms, Matrix.scale(1), view_matrix, projection_matrix, camera_world_position);
+        setMvpUniforms(Uniforms, Matrix.scale(1), view_matrix, projection_matrix);
+        setCameraPosUniform(Uniforms, view_matrix);
         setTimeUniform(Uniforms);
         setResolutionUniform(Uniforms, gl);
         Uniforms.u_distortion = planEau.textures[0].bind(0);
@@ -155,16 +163,22 @@ function draw_wgl() {
         Uniforms.u_height_texture = terrain.textures[0].bind(3);
     planEau.mesh.draw(gl.TRIANGLES);
 
+    particules.shaderProgram.bind();
+    setMvpUniforms(Uniforms, Matrix.translate(0,.15,0), view_matrix, projection_matrix);
+    setTimeUniform(Uniforms);
+    particules.mesh.draw(gl.TRIANGLES);
+
     gl.bindTexture(gl.TEXTURE_2D, null);
     gl.bindVertexArray(null);
 	gl.useProgram(null);
 }
 
 ewgl.loadRequiredFiles([
-    "terrainShaders.js",
+    "terrainShader.js",
     "herbesShader.js",
     "skyBoxShader.js",
     "planEauShader.js",
+    "particulesShader.js",
     "fonctions.js"
 ], ewgl.launch_3d);
 
