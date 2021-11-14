@@ -16,7 +16,7 @@ out vec3 world_pos;
 out vec3 world_normal;
 
 vec3 hauteur(in vec3 p) {
-    float h = length(texture(u_height_texture, p.xz - .5).xyz)*.25 - .25;
+    float h = (texture(u_height_texture, p.xz - .5).x - .5)*.5;
     return p + vec3(0., h, 0.);
 }
 

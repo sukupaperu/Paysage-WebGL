@@ -7,24 +7,17 @@ function initFBOs(textures) {
     return fbos;
 }
 
-function loadTexture(path) {
+function loadTexture(path, type = gl.RGB8) {
     let t = Texture2d();
     t.simple_params(gl.LINEAR, gl.REPEAT);
-    t.load(path);
+    t.load(path, type);
     return t;
 }
 
-function loadTextureWA(path) {
+function initTextureForFBO(w = 0, h = 0, type = gl.RGB8) {
     let t = Texture2d();
     t.simple_params(gl.LINEAR, gl.REPEAT);
-    t.load(path, gl.RGBA8);
-    return t;
-}
-
-function initTextureForFBO(w, h) {
-    let t = Texture2d();
-    t.simple_params(gl.LINEAR, gl.REPEAT);
-    t.alloc(w, h, gl.RGBA8);
+    t.alloc(w, h, type);
     return t;
 }
 
@@ -35,18 +28,23 @@ function setMvpUniforms(u, m, v, p, c) {
     u.u_camera_world_pos = c;
 }
 
-function lightFeeder(position, ambiant, diffuse) {
-    return (u) => {
-        u.u_light_world_pos = position
-        u.u_ka = ambiant,
-        u.u_kd = diffuse
-    };
+function setLightUniforms(u, o) {
+        u.u_light_world_pos = o.position;
+        u.u_ka = o.ambiant;
+        u.u_kd = o.diffuse;
+}
+
+function setTimeUniform(u) {
+    u.u_time = ewgl.current_time;
+}
+
+function setResolutionUniform(u, g) {
+    u.u_resolution = Vec2(g.canvas.width, g.canvas.height);
 }
 
 function meshGrille(subdivisions, positionID) {
 	let nb_w_grille = subdivisions;
 	let nb_l_grille = subdivisions;
-	let nb_triangles = nb_w_grille*nb_l_grille*2;
 
     // VBO : génération des coordonnées des sommets des triangles
 	let vertices_list = [];
@@ -128,19 +126,12 @@ function meshHerbes(vertical_subdivisions, positionID, number) {
     // retourne de quoi pouvoir dessiner ladite grille
     return {
         draw: (draw_type, fact) => {
-            let n = Math.floor(fact*number);
-
-            Uniforms.u_number = n;
-            Uniforms.u_time = ewgl.current_time;
+            let n = Uniforms.u_number = Math.floor(fact*number);
 
             gl.bindVertexArray(vao.id);
 
             gl.disable(gl.CULL_FACE);
-            //gl.enable(gl.BLEND);
-            //gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
             gl.drawElementsInstanced(draw_type, nb_sommets, gl.UNSIGNED_INT, 0, n*n);
-	        // gl.drawElements(draw_type, nb_sommets, gl.UNSIGNED_INT, 0);
-            //gl.disable(gl.BLEND);
             gl.enable(gl.CULL_FACE);
         }
     };
