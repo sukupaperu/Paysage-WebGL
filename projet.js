@@ -8,6 +8,7 @@ function initMeshObject() {
         mesh: null,
         textures: [],
         texture: null,
+        renderBuffer: null,
         fbos: []
     };
 }
@@ -61,14 +62,19 @@ function init_wgl() {
     planEau.textures[1] = initTextureForFBO();
     planEau.textures[2] = initTextureForFBO();
     planEau.fbos = initFBOs([1,2].map(i => planEau.textures[i]));
+    planEau.renderBuffer = initRenderbufferForFBO(planEau.fbos[0].id);
     
     particules.shaderProgram = ShaderProgram(particules.vs_src, particules.fs_src, 'Shader particules');
     particules.mesh = meshParticules(nb_particules, particules.shaderProgram.in.position_in);
 
     // paramètres WebGL
     gl.clearColor(0, 0, 0, 1);
+
     gl.enable(gl.DEPTH_TEST);
-    gl.enable(gl.CULL_FACE); gl.cullFace(gl.FRONT);
+    gl.enable(gl.CULL_FACE);
+
+    gl.cullFace(gl.FRONT);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
     // paramètre de scène et de caméra
     ewgl.scene_camera.set_scene_radius(1);
@@ -76,7 +82,10 @@ function init_wgl() {
 }
 
 function resize_wgl(w, h) {
-    [1,2].map(i => planEau.textures[i].resize(w, h));
+    [0,1].map(i => planEau.fbos[i].resize(w, h));
+
+	gl.bindRenderbuffer(gl.RENDERBUFFER, planEau.renderBuffer);
+	gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT24, w, h);
 }
 
 function draw_wgl() {
@@ -107,14 +116,13 @@ function draw_wgl() {
             case 1:
                 planEau.fbos[1].bind();
                 gl.enable(gl.CULL_FACE);
-                gl.cullFace(gl.FRONT);
                 break;
             default:
                 gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-                gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
                 break;
         }
-
+        
+        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     
         skyBox.shaderProgram.bind();
@@ -140,7 +148,7 @@ function draw_wgl() {
             Uniforms.u_under_zero_rendering = pass >= 1;
         terrain.mesh.draw(gl.TRIANGLES);
         
-        if(pass != 1) {
+        if(pass !== 1) {
             herbes.shaderProgram.bind();
                 setMvpUniforms(Uniforms, model_matrix, view_matrix, projection_matrix);
                 setCameraPosUniform(Uniforms, view_matrix);
@@ -148,7 +156,7 @@ function draw_wgl() {
                 setTimeUniform(Uniforms);
                 Uniforms.u_height_texture = terrain.textures[0].bind(0);
                 // Uniforms.u_color_texture = herbes.texture.bind(1);
-            herbes.mesh.draw(gl.TRIANGLES, pass == 2 ? 1 : .5);
+            herbes.mesh.draw(gl.TRIANGLES, pass === 2 ? 1 : .85);
         }
     }
 

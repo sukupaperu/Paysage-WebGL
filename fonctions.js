@@ -1,12 +1,5 @@
 "use strict";
 
-function initFBOs(textures) {
-    let fbos = [];
-    for(let i = 0; i < textures.length; i++) 
-        fbos.push(FBO(textures[i]));
-    return fbos;
-}
-
 function loadTexture(path, type = gl.RGB8) {
     let t = Texture2d();
     t.simple_params(gl.LINEAR, gl.REPEAT);
@@ -19,6 +12,24 @@ function initTextureForFBO(w = 0, h = 0, type = gl.RGB8) {
     t.simple_params(gl.LINEAR, gl.REPEAT);
     t.alloc(w, h, type);
     return t;
+}
+
+function initRenderbufferForFBO(fbo, w = 0, h = 0, type = gl.DEPTH_COMPONENT24) {
+	gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+	let rb = gl.createRenderbuffer();
+	gl.bindRenderbuffer(gl.RENDERBUFFER, rb);
+	gl.renderbufferStorage(gl.RENDERBUFFER, type, w, h);
+	gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, rb);
+	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+	gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+    return rb;
+}
+
+function initFBOs(textures) {
+    let fbos = [];
+    for(let i = 0; i < textures.length; i++)
+        fbos.push(FBO(textures[i]));
+    return fbos;
 }
 
 function setMvpUniforms(u, m, v, p) {
@@ -153,7 +164,7 @@ function meshParticules(number, positionID) {
     let vbo_positions = VBO(new Float32Array(vertices_list), 3);
 
     // EBO : génération du tableau d'indices des sommets des triangles
-    let indices_list = [0, 1, 2, 1, 3, 2];
+    let indices_list = [0, 2, 1, 1, 2, 3];
     let ebo = EBO(new Uint32Array(indices_list));
     let nb_sommets = indices_list.length;
 	
@@ -176,10 +187,7 @@ function meshParticules(number, positionID) {
             gl.bindVertexArray(vao.id);
 
             gl.enable(gl.BLEND);
-			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-            gl.disable(gl.CULL_FACE);
             gl.drawElementsInstanced(draw_type, nb_sommets, gl.UNSIGNED_INT, 0, n*n);
-            gl.enable(gl.CULL_FACE);
             gl.disable(gl.BLEND);
         }
     }

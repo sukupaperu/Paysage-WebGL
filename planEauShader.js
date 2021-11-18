@@ -78,10 +78,7 @@ void main() {
     vec2 d_screen_pos = screen_pos + distortion*(1. - lgt);
     vec3 refraction = texture(u_refraction, d_screen_pos).rgb - vec3(.1,.1,.025);
     vec3 reflexion = texture(u_reflexion, d_screen_pos).rgb;
-    vec3 color = mix(refraction, reflexion, clamp(a*a*4.5,0.,1.));
-
-    //color = mix(color, vec3(dist), .99);
-    //color = mix(color, reflexion, .999);
+    vec3 color = mix(refraction, reflexion, clamp(a*a*4.5, 0., 1.));
 
     oFragmentColor = vec4(color, 1.);
 }`;
