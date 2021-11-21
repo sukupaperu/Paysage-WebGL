@@ -56,15 +56,24 @@ function setResolutionUniform(u, g) {
     u.u_resolution = Vec2(g.canvas.width, g.canvas.height);
 }
 
-function meshGrille(subdivisions, positionID) {
+function meshGrille(subdivisions, positionID, estEtendu = false, tailleEtendu = 2) {
 	let nb_w_grille = subdivisions;
 	let nb_l_grille = subdivisions;
 
     // VBO : génération des coordonnées des sommets des triangles
 	let vertices_list = [];
 	for(let i = 0; i <= nb_w_grille; i++)
-		for(let j = 0; j <= nb_l_grille; j++)
-			vertices_list.push(i/nb_w_grille - .5, 0., j/nb_l_grille - .5);
+		for(let j = 0; j <= nb_l_grille; j++) {
+            let x = i/nb_w_grille - .5;
+            let y = j/nb_l_grille - .5;
+            if(estEtendu) {
+                if(i === 0) x = -tailleEtendu;
+                if(i === nb_w_grille) x = tailleEtendu;
+                if(j === 0) y = -tailleEtendu;
+                if(j === nb_l_grille) y = tailleEtendu;
+            }
+			vertices_list.push(x, 0., y);
+        }
     let vbo_positions = VBO(new Float32Array(vertices_list), 3);
     
     // EBO : génération du tableau d'indices des sommets des triangles
