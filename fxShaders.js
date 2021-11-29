@@ -5,8 +5,7 @@ void main() {
 	float y = -1. + float((gl_VertexID&1) << 2);
 	float x = -1. + float((gl_VertexID&2) << 1);
 	gl_Position = vec4(x, y, 0.0, 1.0 );
-}
-`;
+}`;
 
 fx.fs_src = `#version 300 es
 precision highp float;
@@ -40,7 +39,6 @@ void main() {
 
     color += glow*.25;
 
-    float k = length(st - .5);
+    float k = length(st - .5)*0.;
     oFragmentColor = vec4(color - k*k*k*.5, 1.);
-}
-`;
+}`;

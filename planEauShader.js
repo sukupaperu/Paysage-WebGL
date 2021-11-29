@@ -37,40 +37,48 @@ in vec3 model_pos;
 in vec3 world_pos;
 
 uniform vec3 u_camera_world_pos;
-/*uniform vec3 u_light_world_pos;
+uniform vec3 u_light_dir;
 uniform vec3 u_ka;
-uniform vec3 u_kd;*/
+uniform vec3 u_kd;
 
 uniform float u_time;
 uniform vec2 u_resolution;
+
 uniform sampler2D u_distortion;
-uniform sampler2D u_reflexion;
-uniform sampler2D u_refraction;
 uniform sampler2D u_height_texture;
 
+uniform sampler2D u_reflexion;
+uniform sampler2D u_refraction;
+
+vec2 getDistortion(sampler2D s) {
+    return (texture(s, tex_coord_world*5. + u_time*.06).xy + texture(s, tex_coord_world - u_time*.04).xy)/2. - .5;
+}
+
 void main() {
-    vec2 distortion = ((texture(u_distortion, tex_coord_world*5. + u_time*.016).xy - .5)*(texture(u_distortion, tex_coord_world*1. - u_time*.04).xy - .5)*(texture(u_distortion, tex_coord_world*.5 + u_time*.02).xy - .5)*.8);
+    // calcul de la distortion
+    vec2 distortion = getDistortion(u_distortion)*.04;
+    float dist = smoothstep(.1, -.1, (texture(u_height_texture, clamp(tex_coord_world,-.5,.5) - .5).r - .5) + .01);
+    dist = (1. - dist)*cos(dist*10. + u_time*4.);
+    distortion -= dist*.04;
 
-    float dist = (texture(u_height_texture, clamp(tex_coord_world,-.5,.5) - .5).r - .5);
-    dist = smoothstep(.1, -.1, dist + .01);
-    dist = (1. - dist)*cos(dist*20. + u_time*4.);
-    distortion -= dist*.01;
-    distortion *= .8;
-
+    // Informations de géométrie
     vec2 screen_pos = gl_FragCoord.xy/u_resolution.xy;
+    vec3 normal = normalize(vec3(0.,1.,0.) + vec3(distortion, 1.).xzy);
+    vec3 view_dir = normalize(world_pos - u_camera_world_pos);
 
-    float lgt = clamp(length(max(abs(screen_pos - .5) - .49, 0.)) - .01,0.,1.); // pour réduire distortions sur les bords de l'écran
+    // application de la distortion sur la normale
+    vec2 d_screen_pos = screen_pos + distortion;
 
-    vec3 normal = normalize(vec3(0., 1., 0.) + vec3(distortion, 1.).xzy);
-    vec3 vd = normalize(world_pos - u_camera_world_pos);
-    float a = clamp(dot(vd, normal)*.5 + .5, 0., 1.);
-
-    vec2 d_screen_pos = screen_pos + distortion*(1. - lgt);
-    vec3 refraction = texture(u_refraction, d_screen_pos).rgb - vec3(.1,.1,.025);
-    vec3 reflexion = texture(u_reflexion, d_screen_pos).rgb - .01;
+    vec3 refraction = texture(u_refraction, d_screen_pos).rgb*vec3(.6,.6,.8);
+    vec3 reflexion = texture(u_reflexion, d_screen_pos).rgb*.99;
+    
+    // Angle pour calculer le coef de fresnel
+    float a = dot(view_dir, normal)*.5 + .5;
     vec3 color = mix(refraction, reflexion, clamp(a*a*6., .05, 1.));
 
-    //color = mix(color, vec3(step(-0.5, tex_coord_world), 1.), .99);
+
+    // float cccc = dot(normal, normalize(u_light_dir))*.5 + .5;
+    // color = mix(color, vec3(fract(cccc*20.)), .99);
 
     oFragmentColor = vec4(color, 1.);
 }`;

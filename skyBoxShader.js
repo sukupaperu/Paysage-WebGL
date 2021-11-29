@@ -19,7 +19,6 @@ in vec3 tex_coord;
 
 out vec4 oFragmentColor;
 
-uniform vec3 uMeshColor;
 uniform samplerCube u_texture_skybox_0;
 uniform samplerCube u_texture_skybox_1;
 

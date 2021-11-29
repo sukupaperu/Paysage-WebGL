@@ -72,7 +72,7 @@ function meshGrille(subdivisions, positionID, estEtendu = false, tailleEtendu = 
                 if(j === 0) y = -tailleEtendu;
                 if(j === nb_l_grille) y = tailleEtendu;
             }
-			vertices_list.push(x, 0., y);
+			vertices_list.push(x, 0, y);
         }
     let vbo_positions = VBO(new Float32Array(vertices_list), 3);
     
@@ -106,7 +106,7 @@ function meshGrille(subdivisions, positionID, estEtendu = false, tailleEtendu = 
 }
 
 function meshHerbes(vertical_subdivisions, number, positionID) {
-    let width = 1. /*(512/2)/512*/, height = 1;
+    let width = 1., height = 1;
     
     // VBO : génération des coordonnées des sommets des triangles
 	let vertices_list = [];
@@ -114,7 +114,6 @@ function meshHerbes(vertical_subdivisions, number, positionID) {
     for(let y = 0; y <= vertical_subdivisions; y++) {
         let ypos = y*v_step;
         let w = (1 - Math.pow(ypos, .8))*(width/(4*7));
-        //let w = width/2;
         vertices_list.push(
             -w, ypos, 0,
             w, ypos, 0

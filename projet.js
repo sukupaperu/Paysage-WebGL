@@ -13,7 +13,7 @@ function initMeshObject() {
     };
 }
 
-const nb_herbes = 250;
+const nb_herbes = 300;
 const nb_particules = 5;
 
 const skyBox = initMeshObject();
@@ -41,7 +41,7 @@ function init_wgl() {
     skyBox.textures[1].load([ "textures/skybox/skybox2/right.png", "textures/skybox/skybox2/left.png", "textures/skybox/skybox2/top.png", "textures/skybox/skybox2/bottom.png", "textures/skybox/skybox2/back.png", "textures/skybox/skybox2/front.png"]);
 
     terrain.shaderProgram = ShaderProgram(terrain.vs_src, terrain.fs_src, 'Shader terrain');
-    terrain.mesh = meshGrille(30, terrain.shaderProgram.in.position_in, true, 15);
+    terrain.mesh = meshGrille(30, terrain.shaderProgram.in.position_in, true, 50);
     terrain.textures[0] = loadTexture("textures/terrain_hm.png", gl.R8);
     terrain.textures[1] = loadTexture("textures/material/terre_albedo.png");
     terrain.textures[2] = loadTexture("textures/material/gravier_albedo.png");
@@ -57,6 +57,7 @@ function init_wgl() {
     planEau.shaderProgram = ShaderProgram(planEau.vs_src, planEau.fs_src, 'Shader eau');
     planEau.mesh = meshGrille(1, planEau.shaderProgram.in.position_in);
     planEau.textures[0] = loadTexture("textures/distortion_map.png", gl.RG8);
+    // planEau.textures[1] = loadTexture("textures/normal_map.png");
     planEau.textures[1] = initTextureForFBO();
     planEau.textures[2] = initTextureForFBO();
     planEau.fbos = initFBOs([1,2].map(i => planEau.textures[i]));
@@ -80,8 +81,9 @@ function init_wgl() {
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
     // paramètre de scène et de caméra
-    ewgl.scene_camera.set_scene_radius(10);
+    ewgl.scene_camera.set_scene_radius(100);
     ewgl.continuous_update = true;
+    ewgl.scene_camera.look(Vec3(0.,.5,-2.), Vec3(0.,-.5,2.), Vec3(0.,1.,0.));
 }
 
 function resize_wgl(w, h) {
@@ -166,8 +168,9 @@ function draw_wgl() {
     }
 
     planEau.shaderProgram.bind();
-        setMvpUniforms(Uniforms, Matrix.scale(30), view_matrix, projection_matrix);
+        setMvpUniforms(Uniforms, Matrix.scale(100), view_matrix, projection_matrix);
         setCameraPosUniform(Uniforms, view_matrix);
+        // setLightUniforms(Uniforms, lights);
         setTimeUniform(Uniforms);
         setResolutionUniform(Uniforms, gl);
         Uniforms.u_distortion = planEau.textures[0].bind(0);

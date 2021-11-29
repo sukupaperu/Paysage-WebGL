@@ -34,12 +34,11 @@ vec3 hauteur(in vec3 p) {
 mat2 rot(float a) { return mat2(cos(a),sin(a),-sin(a),cos(a)); }
 
 void main() {
-    const vec2 minMaxHeight = vec2(1.5, 2.7);
-    const float scale = .035;
+    const float f = 1.;
+    const vec2 minMaxHeight = vec2(1.5, 2.7)*f;
+    const float scale = .035*f;
 
     tex_height = position_in.y;
-
-    tex_coord = position_in.xy - vec2(0., .5);
 
     vec2 distribution = vec2(
         mod(float(gl_InstanceID), u_number),
@@ -80,7 +79,6 @@ void main() {
     vec3 modelPos = p_in*(scale*clamp((ht - 0.03)*130., 0., 1.)) + hauteurTerrain;
     vec4 worldPos = u_model*vec4(modelPos, 1.);
 
-    model_pos = modelPos;
     world_pos = worldPos.xyz;
 
     gl_Position = u_projection*u_view*worldPos;
@@ -91,9 +89,7 @@ precision highp float;
 
 out vec4 ddd;
 
-in vec2 tex_coord;
 in float tex_height;
-in vec3 model_pos;
 in vec3 world_pos;
 in vec3 world_normal;
 in float instance_random;
@@ -116,24 +112,18 @@ vec3 phongModel(vec3 n, float ks, float kn) {
     vec3 id = u_kd*max(0., dot(nd, ld));
     vec3 is = vec3(ks)*pow(max(0., dot(nd, hrd)), kn);
 
-    return ia*2. + id*.5 + is;
+    return (ia*1.5 + id*.75) + is;
 }
 
 void main() {
-    /*const float texRatio = (512./2.)/512.;
-    vec2 texCoordSelect = tex_coord - vec2(texRatio*floor(instance_random*-2.4454) + texRatio*.5, .51);
-    vec4 tex = texture(u_color_texture, texCoordSelect).rgba;
-    if(tex.a < .5)
-        discard;
-    vec3 albedo = tex.rgb;*/
 
     vec3 color = mix(
         vec3(.2, 1., .2)*.2,
         mix(vec3(0.208,0.825,0.289), vec3(0.962,1.000,0.410), instance_random),
-        vec3(tex_height)
+        tex_height*tex_height*1.2
     );
 
-    color *= phongModel(world_normal, .1, 2.);
+    color *= phongModel(world_normal, 1., 1.);
 
     ddd = vec4(color, /*tex.a*/ 1.);
 }`;
