@@ -13,7 +13,7 @@ function initMeshObject() {
     };
 }
 
-const nb_herbes = 300;
+const nb_herbes = 200;
 const nb_particules = 5;
 
 const skyBox = initMeshObject();
@@ -21,6 +21,7 @@ const terrain = initMeshObject();
 const herbes = initMeshObject();
 const planEau = initMeshObject();
 const particules = initMeshObject();
+const croix = initMeshObject();
 const fx = initMeshObject();
 
 const lights = {
@@ -41,7 +42,7 @@ function init_wgl() {
     skyBox.textures[1].load([ "textures/skybox/skybox2/right.png", "textures/skybox/skybox2/left.png", "textures/skybox/skybox2/top.png", "textures/skybox/skybox2/bottom.png", "textures/skybox/skybox2/back.png", "textures/skybox/skybox2/front.png"]);
 
     terrain.shaderProgram = ShaderProgram(terrain.vs_src, terrain.fs_src, 'Shader terrain');
-    terrain.mesh = meshGrille(30, terrain.shaderProgram.in.position_in, true, 50);
+    terrain.mesh = meshGrille(40, terrain.shaderProgram.in.position_in, true, 50);
     terrain.textures[0] = loadTexture("textures/terrain_hm.png", gl.R8);
     terrain.textures[1] = loadTexture("textures/material/terre_albedo.png");
     terrain.textures[2] = loadTexture("textures/material/gravier_albedo.png");
@@ -51,7 +52,7 @@ function init_wgl() {
     //terrain.textures[7] = loadTexture("textures/material/sable_normal.png");
 
     herbes.shaderProgram = ShaderProgram(herbes.vs_src, herbes.fs_src, 'Shader herbes');
-    herbes.mesh = meshHerbes(4, nb_herbes, herbes.shaderProgram.in.position_in);
+    herbes.mesh = meshHerbes(8, nb_herbes, herbes.shaderProgram.in.position_in);
     // herbes.texture = loadTextureWA("textures/material/herbes.png");
 
     planEau.shaderProgram = ShaderProgram(planEau.vs_src, planEau.fs_src, 'Shader eau');
@@ -65,6 +66,8 @@ function init_wgl() {
     
     particules.shaderProgram = ShaderProgram(particules.vs_src, particules.fs_src, 'Shader particules');
     particules.mesh = meshParticules(nb_particules, particules.shaderProgram.in.position_in);
+
+    croix.shaderProgram = ShaderProgram(croix.vs_src, croix.fs_src);
 
     fx.shaderProgram = ShaderProgram(fx.vs_src, fx.fs_src, 'Shader fx');
     fx.texture = initTextureForFBO();
@@ -83,6 +86,7 @@ function init_wgl() {
     // paramètre de scène et de caméra
     ewgl.scene_camera.set_scene_radius(100);
     ewgl.continuous_update = true;
+    ewgl.scene_camera.set_fov(30);
     ewgl.scene_camera.look(Vec3(0.,.5,-2.), Vec3(0.,-.5,2.), Vec3(0.,1.,0.));
 }
 
@@ -165,6 +169,11 @@ function draw_wgl() {
                 // Uniforms.u_color_texture = herbes.texture.bind(1);
             herbes.mesh.draw(gl.TRIANGLES, pass === 2 ? 1 : .5);
         }
+
+        croix.shaderProgram.bind();
+            setMvpUniforms(Uniforms, model_matrix, view_matrix, projection_matrix);
+            Uniforms.u_light_dir = lights.direction;
+        croix.mesh.draw(gl.TRIANGLES, 200);
     }
 
     planEau.shaderProgram.bind();
@@ -197,12 +206,31 @@ function draw_wgl() {
 	unbind_shader();
 }
 
+
+
 ewgl.loadRequiredFiles([
     "terrainShader.js",
     "herbesShader.js",
     "skyBoxShader.js",
     "planEauShader.js",
     "particulesShader.js",
+    "croixShader.js",
     "fxShaders.js",
     "fonctions.js"
-], ewgl.launch_3d);
+], () => {
+    Mesh.loadObjFile("modeles/croix.obj").then ((m) => {
+        croix.mesh = m[0].instanced_renderer([], 1, 2);
+        //console.log(m[0])
+        //croix.mesh.draw = function (draw_type) {
+            //let n = Uniforms.u_number = Math.floor(fact*number);
+            // this.ebo_tri.bind();
+
+            // gl.disable(gl.CULL_FACE);
+            // gl.drawArraysInstanced(draw_type, 0, this.nbv, 1/*n*n*/);
+            // gl.enable(gl.CULL_FACE);
+        //     this.ebo_tri.bind();
+		// 	unbind_ebo();
+        // };
+        ewgl.launch_3d();
+    });
+});

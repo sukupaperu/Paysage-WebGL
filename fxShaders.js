@@ -39,6 +39,6 @@ void main() {
 
     color += glow*.25;
 
-    float k = length(st - .5)*0.;
-    oFragmentColor = vec4(color - k*k*k*.5, 1.);
+    float k = length(st - .5);
+    oFragmentColor = vec4(color - k*k*k*.5*vec3(0.,1.,1.), 1.);
 }`;

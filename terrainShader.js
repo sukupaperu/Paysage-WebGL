@@ -97,8 +97,10 @@ void main() {
     vec3 c1 = texture(u_color_texture_1, texCoord).xyz;
     vec3 c2 = texture(u_color_texture_2, texCoord).xyz;
 
-    vec3 color = phongModel(normal, isGravier*.5, 10.)
+    vec3 color = phongModel(normal, isGravier*1.5, 10.)
         *mix(mix(c0, c2, step(model_pos.y, 0.)), c1, isGravier);
+
+    color *= mix(vec3(1.), vec2(1.,.2).xyy, clamp(pow(isGravier*1.02, 4.),0.,1.));
 
     color += min(0., -model_pos.y*model_pos.y*10.)*vec3(1.,1.,.6);
 

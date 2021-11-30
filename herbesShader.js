@@ -13,15 +13,11 @@ uniform float u_time;
 
 uniform sampler2D u_height_texture;
 
-out vec2 tex_coord;
-out float tex_height;
-
-out vec3 model_pos;
 out vec3 world_pos;
 out vec3 world_normal;
 
+out float tex_height;
 out float instance_random;
-
 
 float rand(in vec2 st){ return fract(sin(dot(st.xy,vec2(12.9898,78.233)))*43758.585); }
 vec4 mod289(vec4 g){return g-floor(g*(1./289.))*289.;}vec4 permute(vec4 g){return mod289((g*34.+1.)*g);}vec4 taylorInvSqrt(vec4 g){return 1.79284-.853735*g;}vec2 fade(vec2 g){return g*g*g*(g*(g*6.-15.)+10.);}float cnoise(vec2 g){vec4 v=floor(g.rgrg)+vec4(0.,0.,1.,1.),d=fract(g.rgrg)-vec4(0.,0.,1.,1.);v=mod289(v);vec4 r=v.rbrb,a=v.ggaa,p=d.rbrb,e=d.ggaa,c=permute(permute(r)+a),f=fract(c*(1./41.))*2.-1.,t=abs(f)-.5,b=floor(f+.5);f=f-b;vec2 m=vec2(f.r,t.r),o=vec2(f.g,t.g),l=vec2(f.b,t.b),u=vec2(f.a,t.a);vec4 n=taylorInvSqrt(vec4(dot(m,m),dot(l,l),dot(o,o),dot(u,u)));m*=n.r;l*=n.g;o*=n.b;u*=n.a;float i=dot(m,vec2(p.r,e.r)),x=dot(o,vec2(p.g,e.g)),s=dot(l,vec2(p.b,e.b)),S=dot(u,vec2(p.a,e.a));vec2 I=fade(d.rg),y=mix(vec2(i,s),vec2(x,S),I.r);float q=mix(y.r,y.g,I.g);return 2.3*q;}
@@ -87,7 +83,7 @@ void main() {
 herbes.fs_src = `#version 300 es
 precision highp float;
 
-out vec4 ddd;
+out vec4 oFragmentColor;
 
 in float tex_height;
 in vec3 world_pos;
@@ -98,9 +94,6 @@ uniform vec3 u_camera_world_pos;
 uniform vec3 u_light_dir;
 uniform vec3 u_ka;
 uniform vec3 u_kd;
-// uniform sampler2D u_color_texture;
-
-float rand(in vec2 st) { return fract(sin(dot(st.xy,vec2(12.9898,78.233)))*43758.585); }
 
 vec3 phongModel(vec3 n, float ks, float kn) {
     vec3 nd = n;
@@ -116,14 +109,17 @@ vec3 phongModel(vec3 n, float ks, float kn) {
 }
 
 void main() {
+    const vec3 coul1 = vec3(.9,.9,1.);//vec3(0.208,0.825,0.289);
+    const vec3 coul2 = vec3(1.,.9,.9);//vec3(0.962,1.000,0.410);
+    vec3 coul3 = mix(coul1, coul2, instance_random);
 
     vec3 color = mix(
-        vec3(.2, 1., .2)*.2,
-        mix(vec3(0.208,0.825,0.289), vec3(0.962,1.000,0.410), instance_random),
-        tex_height*tex_height*1.2
+        coul3*.2,
+        coul3,
+        tex_height
     );
 
     color *= phongModel(world_normal, 1., 1.);
 
-    ddd = vec4(color, /*tex.a*/ 1.);
+    oFragmentColor = vec4(color, /*tex.a*/ 1.);
 }`;

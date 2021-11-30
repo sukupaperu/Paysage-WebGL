@@ -7,6 +7,7 @@ layout(location = 1) in vec3 position_in;
 uniform mat4 u_model;
 uniform mat4 u_view;
 uniform mat4 u_projection;
+uniform float u_time;
 
 out vec2 tex_coord;
 out vec2 tex_coord_world;
@@ -14,7 +15,7 @@ out vec3 model_pos;
 out vec3 world_pos;
 
 void main() {
-    vec3 rawModelPos = position_in;
+    vec3 rawModelPos = position_in + cos(u_time)*10e-6;
     vec3 modelPos = rawModelPos;
     vec4 worldPos = u_model*vec4(modelPos, 1.);
 
@@ -69,16 +70,18 @@ void main() {
     // application de la distortion sur la normale
     vec2 d_screen_pos = screen_pos + distortion;
 
-    vec3 refraction = texture(u_refraction, d_screen_pos).rgb*vec3(.6,.6,.8);
+    vec3 refraction = texture(u_refraction, d_screen_pos).rgb*vec3(.6,.1,.1); //vec3(.6,.6,.8)
     vec3 reflexion = texture(u_reflexion, d_screen_pos).rgb*.99;
     
     // Angle pour calculer le coef de fresnel
     float a = dot(view_dir, normal)*.5 + .5;
-    vec3 color = mix(refraction, reflexion, clamp(a*a*6., .05, 1.));
+    vec3 color = mix(refraction, reflexion, clamp(pow(a*2.,1.5), .05, 1.));
 
-
-    // float cccc = dot(normal, normalize(u_light_dir))*.5 + .5;
-    // color = mix(color, vec3(fract(cccc*20.)), .99);
+    vec3 light_dir = normalize(vec3(10., 8., 0));
+    vec3 hrd = normalize(light_dir - view_dir);
+    float cc = pow(max(dot(normal, hrd),0.),10e3)*.2;
+    //color = mix(color, vec3(cc), .99);
+    color += cc;
 
     oFragmentColor = vec4(color, 1.);
 }`;
