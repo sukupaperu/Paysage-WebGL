@@ -9,7 +9,8 @@ function initMeshObject() {
         textures: [],
         texture: null,
         renderBuffer: null,
-        fbos: []
+        fbos: [],
+        model: null
     };
 }
 
@@ -56,6 +57,7 @@ function init_wgl() {
     // herbes.texture = loadTextureWA("textures/material/herbes.png");
 
     planEau.shaderProgram = ShaderProgram(planEau.vs_src, planEau.fs_src, 'Shader eau');
+    planEau.model = Matrix.scale(100);
     planEau.mesh = meshGrille(1, planEau.shaderProgram.in.position_in);
     planEau.textures[0] = loadTexture("textures/distortion_map.png", gl.RG8);
     // planEau.textures[1] = loadTexture("textures/normal_map.png");
@@ -66,6 +68,7 @@ function init_wgl() {
     
     particules.shaderProgram = ShaderProgram(particules.vs_src, particules.fs_src, 'Shader particules');
     particules.mesh = meshParticules(nb_particules, particules.shaderProgram.in.position_in);
+    particules.model = Matrix.translate(0,.15,0);
 
     croix.shaderProgram = ShaderProgram(croix.vs_src, croix.fs_src);
 
@@ -158,6 +161,11 @@ function draw_wgl() {
             // Uniforms.u_normal_texture_2 = terrain.textures[7].bind(7);
             Uniforms.u_under_zero_rendering = pass >= 1;
         terrain.mesh.draw(gl.TRIANGLES);
+
+        croix.shaderProgram.bind();
+            setMvpUniforms(Uniforms, model_matrix, view_matrix, projection_matrix);
+            setLightUniforms(Uniforms, lights);
+        croix.mesh.draw(gl.TRIANGLES, 50);
         
         if(pass !== 1) {
             herbes.shaderProgram.bind();
@@ -169,15 +177,10 @@ function draw_wgl() {
                 // Uniforms.u_color_texture = herbes.texture.bind(1);
             herbes.mesh.draw(gl.TRIANGLES, pass === 2 ? 1 : .5);
         }
-
-        croix.shaderProgram.bind();
-            setMvpUniforms(Uniforms, model_matrix, view_matrix, projection_matrix);
-            Uniforms.u_light_dir = lights.direction;
-        croix.mesh.draw(gl.TRIANGLES, 200);
     }
 
     planEau.shaderProgram.bind();
-        setMvpUniforms(Uniforms, Matrix.scale(100), view_matrix, projection_matrix);
+        setMvpUniforms(Uniforms, planEau.model, view_matrix, projection_matrix);
         setCameraPosUniform(Uniforms, view_matrix);
         // setLightUniforms(Uniforms, lights);
         setTimeUniform(Uniforms);
@@ -189,7 +192,7 @@ function draw_wgl() {
     planEau.mesh.draw(gl.TRIANGLES);
 
     particules.shaderProgram.bind();
-    setMvpUniforms(Uniforms, Matrix.translate(0,.15,0), view_matrix, projection_matrix);
+    setMvpUniforms(Uniforms, particules.model, view_matrix, projection_matrix);
     setTimeUniform(Uniforms);
     particules.mesh.draw(gl.TRIANGLES);
 
@@ -206,31 +209,18 @@ function draw_wgl() {
 	unbind_shader();
 }
 
-
-
 ewgl.loadRequiredFiles([
-    "terrainShader.js",
-    "herbesShader.js",
-    "skyBoxShader.js",
-    "planEauShader.js",
-    "particulesShader.js",
-    "croixShader.js",
-    "fxShaders.js",
+    "shaders/terrainShader.js",
+    "shaders/herbesShader.js",
+    "shaders/skyBoxShader.js",
+    "shaders/planEauShader.js",
+    "shaders/particulesShader.js",
+    "shaders/croixShader.js",
+    "shaders/fxShaders.js",
     "fonctions.js"
 ], () => {
     Mesh.loadObjFile("modeles/croix.obj").then ((m) => {
         croix.mesh = m[0].instanced_renderer([], 1, 2);
-        //console.log(m[0])
-        //croix.mesh.draw = function (draw_type) {
-            //let n = Uniforms.u_number = Math.floor(fact*number);
-            // this.ebo_tri.bind();
-
-            // gl.disable(gl.CULL_FACE);
-            // gl.drawArraysInstanced(draw_type, 0, this.nbv, 1/*n*n*/);
-            // gl.enable(gl.CULL_FACE);
-        //     this.ebo_tri.bind();
-		// 	unbind_ebo();
-        // };
         ewgl.launch_3d();
     });
 });
