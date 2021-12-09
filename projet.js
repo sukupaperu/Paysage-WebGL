@@ -8,146 +8,103 @@ function initMeshObject() {
         mesh: null,
         textures: [],
         texture: null,
-        renderBuffer: null,
         fbos: [],
         model: null
     };
 }
 
+// Paramètres de la scène
 const nb_herbes = 200;
 const nb_particules = 5;
 
-const skyBox = initMeshObject();
+// Objets que l'on va rendre à l'écrans
+const skybox = initMeshObject();
 const terrain = initMeshObject();
 const herbes = initMeshObject();
-const planEau = initMeshObject();
+const plan_eau = initMeshObject();
 const particules = initMeshObject();
 const croix = initMeshObject();
-const fx = initMeshObject();
+const fx = [
+    initMeshObject(),
+    initMeshObject(),
+    initMeshObject(),
+    initMeshObject()
+];
 
+// Lumière de la scène
 const lights = {
     direction: Vec3(10, 8, 0),
     ambiant: Vec3(.5),
     diffuse: Vec3(1)
 };
+
+// Des matrices que l'on va réutiliser dans le rendu
 const model_matrix = Mat4();
+const invYmat = Matrix.scale(1., -1., 1.);
 
-function init_wgl() {
-
-    skyBox.shaderProgram = ShaderProgram(skyBox.vs_src, skyBox.fs_src, 'Shader skybox');
-    skyBox.mesh = Mesh.Cube().renderer(1);
-    skyBox.textures[0] = TextureCubeMap();
-    skyBox.textures[0].load(["textures/skybox/skybox1/right.bmp", "textures/skybox/skybox1/left.bmp", "textures/skybox/skybox1/top.bmp", "textures/skybox/skybox1/bottom.bmp", "textures/skybox/skybox1/front.bmp", "textures/skybox/skybox1/back.bmp"]);
-    skyBox.textures[1] = TextureCubeMap();
-    //skyBox.textures[1].load([ "textures/skybox/skybox3/px.webp", "textures/skybox/skybox3/nx.webp", "textures/skybox/skybox3/py.webp", "textures/skybox/skybox3/ny.webp", "textures/skybox/skybox3/pz.webp", "textures/skybox/skybox3/nz.webp"]);
-    skyBox.textures[1].load([ "textures/skybox/skybox2/right.png", "textures/skybox/skybox2/left.png", "textures/skybox/skybox2/top.png", "textures/skybox/skybox2/bottom.png", "textures/skybox/skybox2/back.png", "textures/skybox/skybox2/front.png"]);
-
-    terrain.shaderProgram = ShaderProgram(terrain.vs_src, terrain.fs_src, 'Shader terrain');
-    terrain.mesh = meshGrille(40, terrain.shaderProgram.in.position_in, true, 50);
-    terrain.textures[0] = loadTexture("textures/terrain_hm.png", gl.R8);
-    terrain.textures[1] = loadTexture("textures/material/terre_albedo.png");
-    terrain.textures[2] = loadTexture("textures/material/gravier_albedo.png");
-    terrain.textures[3] = loadTexture("textures/material/sable_albedo.png");
-    //terrain.textures[5] = loadTexture("textures/material/terre_normal.png");
-    terrain.textures[6] = loadTexture("textures/material/gravier_normal.png");
-    //terrain.textures[7] = loadTexture("textures/material/sable_normal.png");
-
-    herbes.shaderProgram = ShaderProgram(herbes.vs_src, herbes.fs_src, 'Shader herbes');
-    herbes.mesh = meshHerbes(8, nb_herbes, herbes.shaderProgram.in.position_in);
-    // herbes.texture = loadTextureWA("textures/material/herbes.png");
-
-    planEau.shaderProgram = ShaderProgram(planEau.vs_src, planEau.fs_src, 'Shader eau');
-    planEau.model = Matrix.scale(100);
-    planEau.mesh = meshGrille(1, planEau.shaderProgram.in.position_in);
-    planEau.textures[0] = loadTexture("textures/distortion_map.png", gl.RG8);
-    // planEau.textures[1] = loadTexture("textures/normal_map.png");
-    planEau.textures[1] = initTextureForFBO();
-    planEau.textures[2] = initTextureForFBO();
-    planEau.fbos = initFBOs([1,2].map(i => planEau.textures[i]));
-    planEau.renderBuffer = initRenderbufferForFBO(planEau.fbos[0].id);
-    
-    particules.shaderProgram = ShaderProgram(particules.vs_src, particules.fs_src, 'Shader particules');
-    particules.mesh = meshParticules(nb_particules, particules.shaderProgram.in.position_in);
-    particules.model = Matrix.translate(0,.15,0);
-
-    croix.shaderProgram = ShaderProgram(croix.vs_src, croix.fs_src);
-
-    fx.shaderProgram = ShaderProgram(fx.vs_src, fx.fs_src, 'Shader fx');
-    fx.texture = initTextureForFBO();
-    fx.fbos = initFBOs([fx.texture]);
-    fx.renderBuffer = initRenderbufferForFBO(fx.fbos[0].id);
-
-    // paramètres WebGL
-    gl.clearColor(0, 0, 0, 1);
-
-    gl.enable(gl.DEPTH_TEST);
-    gl.enable(gl.CULL_FACE);
-
-    gl.cullFace(gl.FRONT);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-
-    // paramètre de scène et de caméra
-    ewgl.scene_camera.set_scene_radius(100);
-    ewgl.continuous_update = true;
-    ewgl.scene_camera.set_fov(30);
-    ewgl.scene_camera.look(Vec3(0.,.5,-2.), Vec3(0.,-.5,2.), Vec3(0.,1.,0.));
-}
-
+// Au redimensionnement de l'écran
 function resize_wgl(w, h) {
-    [0,1].map(i => planEau.fbos[i].resize(w, h));
-	gl.bindRenderbuffer(gl.RENDERBUFFER, planEau.renderBuffer);
-	gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT24, w, h);
-
-    fx.texture.resize(w, h);
-	gl.bindRenderbuffer(gl.RENDERBUFFER, fx.renderBuffer);
-	gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT24, w, h);
+    [0,1].map(i => plan_eau.fbos[i].resize(w, h));
+    fx[0].fbos[0].resize(w, h);
+    fx[1].fbos[0].resize(w, h);
+    fx[2].fbos[0].resize(w, h);
 }
 
+// Rendu
 function draw_wgl() {
-    let view_matrix, skybox_matrix, projection_matrix;
-        
-    /*view_matrix = ewgl.scene_camera.get_view_matrix();
-    projection_matrix = ewgl.scene_camera.get_projection_matrix();*/
 
-    /*
-        pass 0 : rendu reflexion
-        pass 1 : rendu refraction
-        pass 2 : rendu fx
+    let view_matrix, skybox_matrix, projection_matrix;
+
+    /* 
+        Rendu en trois passes successives pour les reflets sur l'eau
+        pass 0 : rendu -> texture reflexion
+        pass 1 : rendu -> texture refraction
+        pass 2 : rendu -> texture fx
     */
    for(let pass = 0; pass <= 2; pass++) {
+
+        let under_water_rendering = pass >= 1;
+        let above_water_rendering = pass !== 1;
         
         view_matrix = ewgl.scene_camera.get_view_matrix();
         skybox_matrix = ewgl.scene_camera.get_matrix_for_skybox();
         projection_matrix = ewgl.scene_camera.get_projection_matrix();
-
+        
+        // En fonction de la passe de rendu on bind le FBO qui nous intéresse
         switch(pass) {
+
             case 0:
-                planEau.fbos[0].bind();
-                const invYmat = Matrix.scale(1., -1., 1.);
+                plan_eau.fbos[0].bind();
                 view_matrix = Matrix.mult(view_matrix, invYmat);
                 skybox_matrix = Matrix.mult(skybox_matrix, invYmat);
                 gl.disable(gl.CULL_FACE);
                 break;
+
             case 1:
-                planEau.fbos[1].bind();
+                plan_eau.fbos[1].bind();
                 gl.enable(gl.CULL_FACE);
                 break;
+
             case 2:
-                // gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-                fx.fbos[0].bind();
+                fx[0].fbos[0].bind();
                 break;
+
         }
         
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    
-        skyBox.shaderProgram.bind();
+        
+
+        // Rendu de la skybox
+        skybox.shaderProgram.bind();
             setTimeUniform(Uniforms);
             Uniforms.u_view_projection = skybox_matrix;
-            Uniforms.u_texture_skybox_0 = skyBox.textures[0].bind(0);
-            Uniforms.u_texture_skybox_1 = skyBox.textures[1].bind(1);
-        skyBox.mesh.draw(gl.TRIANGLES);
+            Uniforms.u_texture_skybox_0 = skybox.textures[0].bind(0);
+            Uniforms.u_texture_skybox_1 = skybox.textures[1].bind(1);
+        skybox.mesh.draw(gl.TRIANGLES);
 
+
+        // Rendu du terrain
         terrain.shaderProgram.bind();
             setMvpUniforms(Uniforms, model_matrix, view_matrix, projection_matrix);
             setCameraPosUniform(Uniforms, view_matrix);
@@ -156,18 +113,22 @@ function draw_wgl() {
             Uniforms.u_color_texture_0 = terrain.textures[1].bind(1);
             Uniforms.u_color_texture_1 = terrain.textures[2].bind(2);
             Uniforms.u_color_texture_2 = terrain.textures[3].bind(3);
-            //Uniforms.u_normal_texture_0 = terrain.textures[5].bind(5);
-            Uniforms.u_normal_texture_1 = terrain.textures[6].bind(6);
-            // Uniforms.u_normal_texture_2 = terrain.textures[7].bind(7);
-            Uniforms.u_under_zero_rendering = pass >= 1;
+            Uniforms.u_normal_texture_1 = terrain.textures[4].bind(4);
+            Uniforms.u_under_water_rendering = under_water_rendering;
         terrain.mesh.draw(gl.TRIANGLES);
 
+
+        // Rendu des croix
         croix.shaderProgram.bind();
             setMvpUniforms(Uniforms, model_matrix, view_matrix, projection_matrix);
             setLightUniforms(Uniforms, lights);
-        croix.mesh.draw(gl.TRIANGLES, 50);
+            Uniforms.u_under_water_rendering = under_water_rendering;
+        croix.mesh.draw(gl.TRIANGLES, 100);
         
-        if(pass !== 1) {
+
+        if(above_water_rendering) {
+
+            // Rendu des herbes
             herbes.shaderProgram.bind();
                 setMvpUniforms(Uniforms, model_matrix, view_matrix, projection_matrix);
                 setCameraPosUniform(Uniforms, view_matrix);
@@ -176,51 +137,70 @@ function draw_wgl() {
                 Uniforms.u_height_texture = terrain.textures[0].bind(0);
                 // Uniforms.u_color_texture = herbes.texture.bind(1);
             herbes.mesh.draw(gl.TRIANGLES, pass === 2 ? 1 : .5);
+
         }
     }
 
-    planEau.shaderProgram.bind();
-        setMvpUniforms(Uniforms, planEau.model, view_matrix, projection_matrix);
+
+    // Rendu du plan de l'eau
+    plan_eau.shaderProgram.bind();
+        setMvpUniforms(Uniforms, plan_eau.model, view_matrix, projection_matrix);
         setCameraPosUniform(Uniforms, view_matrix);
         // setLightUniforms(Uniforms, lights);
         setTimeUniform(Uniforms);
         setResolutionUniform(Uniforms, gl);
-        Uniforms.u_distortion = planEau.textures[0].bind(0);
-        Uniforms.u_reflexion = planEau.textures[1].bind(1);
-        Uniforms.u_refraction = planEau.textures[2].bind(2);
+        Uniforms.u_distortion = plan_eau.textures[0].bind(0);
+        Uniforms.u_reflexion = plan_eau.textures[1].bind(1);
+        Uniforms.u_refraction = plan_eau.textures[2].bind(2);
         Uniforms.u_height_texture = terrain.textures[0].bind(3);
-    planEau.mesh.draw(gl.TRIANGLES);
+    plan_eau.mesh.draw(gl.TRIANGLES);
 
+
+    // Rendu des particules (elles ne seront pas rendu dans le reflet)
     particules.shaderProgram.bind();
-    setMvpUniforms(Uniforms, particules.model, view_matrix, projection_matrix);
-    setTimeUniform(Uniforms);
+        setMvpUniforms(Uniforms, particules.model, view_matrix, projection_matrix);
+        setTimeUniform(Uniforms);
     particules.mesh.draw(gl.TRIANGLES);
 
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+    // Rendu post-processing
+    fx[1].fbos[0].bind();
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    fx.shaderProgram.bind();
-        setResolutionUniform(Uniforms, gl);
-        Uniforms.u_render_pass = fx.texture.bind(0);
+    fx[0].shaderProgram.bind();
+        Uniforms.u_render_pass = fx[0].texture.bind(0);
 	gl.drawArrays(gl.TRIANGLES, 0, 3);
 
+    fx[2].fbos[0].bind();
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    fx[1].shaderProgram.bind();
+        Uniforms.u_render_pass = fx[1].texture.bind(0);
+	gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    fx[2].shaderProgram.bind();
+        setResolutionUniform(Uniforms, gl);
+        Uniforms.u_render_pass = fx[2].texture.bind(0);
+        Uniforms.u_render_pass_2 = fx[0].texture.bind(1);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+    // Fin du rendu
     gl.bindTexture(gl.TEXTURE_2D, null);
     gl.bindVertexArray(null);
 	unbind_shader();
+
 }
 
 ewgl.loadRequiredFiles([
-    "shaders/terrainShader.js",
-    "shaders/herbesShader.js",
-    "shaders/skyBoxShader.js",
-    "shaders/planEauShader.js",
-    "shaders/particulesShader.js",
-    "shaders/croixShader.js",
-    "shaders/fxShaders.js",
-    "fonctions.js"
-], () => {
-    Mesh.loadObjFile("modeles/croix.obj").then ((m) => {
-        croix.mesh = m[0].instanced_renderer([], 1, 2);
-        ewgl.launch_3d();
-    });
-});
+    "shaders/terrain.js",
+    "shaders/herbes.js",
+    "shaders/skybox.js",
+    "shaders/plan_eau.js",
+    "shaders/particules.js",
+    "shaders/croix.js",
+    "shaders/fx.js",
+    "constructeurs_mesh.js",
+    "fonctions_diverses.js",
+    "initialisation_scene.js"
+], ewgl.launch_3d);

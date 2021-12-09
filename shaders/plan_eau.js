@@ -1,6 +1,6 @@
 "use strict";
 
-planEau.vs_src = `#version 300 es
+plan_eau.vs_src = `#version 300 es
 
 layout(location = 1) in vec3 position_in;
 
@@ -27,7 +27,7 @@ void main() {
     gl_Position = u_projection*u_view*worldPos;
 }`;
 
-planEau.fs_src = `#version 300 es
+plan_eau.fs_src = `#version 300 es
 precision highp float;
 
 out vec4 oFragmentColor;
@@ -75,7 +75,7 @@ void main() {
     
     // Angle pour calculer le coef de fresnel
     float a = dot(view_dir, normal)*.5 + .5;
-    vec3 color = mix(refraction, reflexion, clamp(pow(a*2.,1.5), .05, 1.));
+    vec3 color = mix(refraction, reflexion, clamp(pow(a*2.,1.5), .1, 1.));
 
     vec3 light_dir = normalize(vec3(10., 8., 0));
     vec3 hrd = normalize(light_dir - view_dir);

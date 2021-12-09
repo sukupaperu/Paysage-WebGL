@@ -21,16 +21,16 @@ void main() {
 
     float i_ID = float(gl_InstanceID);
 
-    float dist = mix(2., 6., rand(vec2(i_ID*vec2(-1.151,2.15))));
+    float dist = mix(.1, 6., rand(vec2(i_ID*vec2(-1.151,2.15))));
     float inclin = (rand(vec2(i_ID*vec2(8.5,1.15))) - .5)*.4;
     float angle = mix(0., 6.28, rand(vec2(i_ID*vec2(6.255,-.48815))));
-    float size = mix(1., 5., rand(vec2(i_ID*vec2(2.37,5.89))));
+    float size = mix(.75, 1., rand(vec2(i_ID*vec2(2.37,5.89))));
     float hauteur = rand(vec2(i_ID*vec2(6.151,412.2)))*.1;
 
     p_in.y -= hauteur + .01;
     p_in *= size*sqrt((dist - 1.));
     p_in.xy *= rot(inclin);
-    p_in.z += dist*dist;
+    p_in.z += dist*dist*.5;
     p_in.xz *= rot(angle);
 
     n_in.xy *= rot(inclin);
@@ -59,6 +59,8 @@ uniform vec3 u_light_dir;
 uniform vec3 u_ka;
 uniform vec3 u_kd;
 
+uniform bool u_under_water_rendering;
+
 // float rand(in vec2 st) { return fract(sin(dot(st.xy,vec2(12.9898,78.233)))*43758.585); }
 
 vec3 phongModel(vec3 n, float ks, float kn) {
@@ -75,6 +77,8 @@ vec3 phongModel(vec3 n, float ks, float kn) {
 }
 
 void main() {
+    if(!u_under_water_rendering && world_pos.y < 0.)
+        discard;
     
     vec3 ld = normalize(-u_light_dir);
 

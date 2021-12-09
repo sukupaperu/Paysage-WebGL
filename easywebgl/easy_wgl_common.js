@@ -3204,7 +3204,7 @@ let TextureCubeMap_ops =
 	load: function(urls, iformat = gl.RGB8, eformat = gl.RGB)
 	{
 		if (eformat == undefined)
-		{
+		{	
 			this.iformat = iformat;
 			[this.eformat,this.dt] = ewgl_common.gl_texture_formats.get(iformat) ;
 		}
@@ -3523,7 +3523,7 @@ function FBO_Depth(colors_attach, fbo_depth, cube_faces)
 		gl.bindRenderbuffer( gl.RENDERBUFFER, null);
 	}
 	else
-	{
+	{	
 		depthRenderBuffer = gl.createRenderbuffer();
 		gl.bindRenderbuffer( gl.RENDERBUFFER, depthRenderBuffer );
 		gl.renderbufferStorage( gl.RENDERBUFFER, gl.DEPTH_COMPONENT24, colors_attach[0].width, colors_attach[0].height );

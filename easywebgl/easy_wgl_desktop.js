@@ -244,17 +244,19 @@ const ewgl_desktop =
 
 		ewgl_desktop.current_time = 0.0;
 		init_scene3d();
-		init_wgl();
-		document.body.onresize = () => {ui_resize();update_wgl();};
-		ui_resize();
-		internal_update_wgl();
-		ewgl_desktop.console.info_nl("<B>WebGL2 context OK</B>");
-		const gldebugInfo = gl.getExtension('RENDERER');
-		if (gldebugInfo)
-		{
-			ewgl_desktop.console.info_nl('<B>Vendor:</B> '+ gl.getParameter(gldebugInfo.UNMASKED_VENDOR_WEBGL));
-			ewgl_desktop.console.info_nl('<B>Renderer:</B> '+ gl.getParameter(gldebugInfo.UNMASKED_RENDERER_WEBGL));	
-		}
+		
+		init_wgl(() => {
+			document.body.onresize = () => {ui_resize();update_wgl();};
+			ui_resize();
+			internal_update_wgl();
+			ewgl_desktop.console.info_nl("<B>WebGL2 context OK</B>");
+			const gldebugInfo = gl.getExtension('RENDERER');
+			if (gldebugInfo)
+			{
+				ewgl_desktop.console.info_nl('<B>Vendor:</B> '+ gl.getParameter(gldebugInfo.UNMASKED_VENDOR_WEBGL));
+				ewgl_desktop.console.info_nl('<B>Renderer:</B> '+ gl.getParameter(gldebugInfo.UNMASKED_RENDERER_WEBGL));	
+			}
+		});
 	},
 }
 

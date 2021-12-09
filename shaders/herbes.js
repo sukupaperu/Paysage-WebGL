@@ -114,7 +114,7 @@ void main() {
     vec3 coul3 = mix(coul1, coul2, instance_random);
 
     vec3 color = mix(
-        coul3*.2,
+        coul3*vec3(.23,.25,.13),
         coul3,
         tex_height
     );

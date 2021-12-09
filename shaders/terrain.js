@@ -61,7 +61,8 @@ uniform sampler2D u_color_texture_2;
 uniform sampler2D u_normal_texture_1;
 // uniform sampler2D u_normal_texture_2;
 
-uniform bool u_under_zero_rendering;
+uniform bool u_under_water_rendering;
+// uniform bool u_above_water_rendering;
 
 vec3 phongModel(vec3 n, float ks, float kn) {
     vec3 nd = n;
@@ -77,8 +78,10 @@ vec3 phongModel(vec3 n, float ks, float kn) {
 }
 
 void main() {
-    if(model_pos.y < 0. && !u_under_zero_rendering)
+    if(!u_under_water_rendering && model_pos.y < 0.)
         discard;
+    // if(!u_above_water_rendering && model_pos.y > 0.)
+    //     discard;
 
     float sz = 6.;
     vec2 texCoord = tex_coord*sz;

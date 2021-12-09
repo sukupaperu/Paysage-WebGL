@@ -51,7 +51,7 @@ void main() {
     vec3 modelPos = instance_position
         + world_camera_right*rawModelPos.x
         + world_camera_up*rawModelPos.y;
-    vec4 worldPos = u_model*vec4(modelPos, 1.);
+    vec4 worldPos = u_model*vec4(modelPos, .5);
 
     tex_coord = position_in.xy;
     model_pos = modelPos;
