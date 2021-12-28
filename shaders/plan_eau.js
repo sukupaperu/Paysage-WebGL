@@ -52,39 +52,47 @@ uniform sampler2D u_reflexion;
 uniform sampler2D u_refraction;
 
 vec2 getDistortion(sampler2D s) {
-    return (texture(s, tex_coord_world*5. + u_time*.06).xy + texture(s, tex_coord_world - u_time*.04).xy)/2. - .5;
+    return (texture(s, tex_coord_world*5. + u_time*.1).xy + texture(s, tex_coord_world*.5 - u_time*.04).xy)/2. - .5;
+}
+
+float carre_dist(vec2 p) {
+    p = abs(p);
+    return max(p.x, p.y)-.5;
 }
 
 void main() {
-    // calcul de la distortion
-    vec2 distortion = getDistortion(u_distortion)*.01;
-    float dist = smoothstep(.1, -.1, (texture(u_height_texture, clamp(tex_coord_world,-.5,.5) - .5).r - .5) + .01);
-    dist = (1. - dist)*cos(dist*10. + u_time*4.);
-    distortion -= dist*.01;
+    // calcul de la distance (aproximative) par rapport à l'île
+    float dist_ile = smoothstep(.1, -.1, (texture(u_height_texture, clamp(tex_coord_world,-.5,.5) - .5).r - .5) + .01);
+    dist_ile = (1. - dist_ile)*cos(dist_ile*30. + u_time*4.);
 
-    // Informations de géométrie
+    // calcul de la distortion avec la distortion map
+    vec2 distortion = getDistortion(u_distortion)*.01;
+    distortion -= dist_ile*.01;
+
+    // informations de géométrie/coordonnées
     vec2 screen_pos = gl_FragCoord.xy/u_resolution.xy;
     vec3 normal = normalize(vec3(0.,1.,0.) + vec3(distortion, 1.).xzy);
     vec3 view_dir = normalize(world_pos - u_camera_world_pos);
 
+    // calcul d'une distance (approximative) par rapport aux bords de l'écran
+    float distance_bords_ecran = smoothstep(0., -.01, carre_dist(screen_pos - .5));
     // application de la distortion sur la normale
-    vec2 d_screen_pos = screen_pos + distortion;
+    vec2 d_screen_pos = screen_pos + distortion*distance_bords_ecran;
 
-    vec3 refraction = texture(u_refraction, d_screen_pos).rgb*vec3(.6,.1,.1); //vec3(.6,.6,.8)
+    vec3 refraction = texture(u_refraction, d_screen_pos).rgb*vec3(.6,.6,.8); //vec3(.6,.1,.1)
     vec3 reflexion = texture(u_reflexion, d_screen_pos).rgb*.99;
     
-    // Angle pour calculer le coef de fresnel
+    // calcul coef de fresnel
     float a = dot(view_dir, normal)*.5 + .5;
-    vec3 color = mix(refraction, reflexion, clamp(pow(a*2.,1.5), .1, 1.));
+    vec3 color = mix(refraction, reflexion, 
+        clamp(pow(a*2.,1.5), .05, .98) // réflectivité max à 98% et min à 5%
+    );
 
-    vec3 light_dir = normalize(vec3(10., 8., 0));
+    // spéculaire
+    vec3 light_dir = normalize(u_light_dir);
     vec3 hrd = normalize(light_dir - view_dir);
-    float cc = pow(max(dot(normal, hrd),0.),10e3)*.2;
-    //color = mix(color, vec3(cc), .99);
-    color += cc;
-
-    float d = distance(u_camera_world_pos, world_pos);
-    
+    float spec = pow(max(dot(normal, hrd), 0.), 10e3)*.5;
+    color += spec;
 
     oFragmentColor = vec4(color, 1.);
 }`;

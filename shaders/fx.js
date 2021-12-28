@@ -21,8 +21,7 @@ void main() {
     vec4 color_a = texelFetch(u_render_pass, tex_coords, 0).bgra;
 
     float brightness = dot(color_a.rgb, vec3(.2126, .7152, .0722));
-
-    color_a.rgb *= step(.65, brightness);
+    color_a.rgb *= smoothstep(.5, .9, brightness);
 
     oFragmentColor = color_a;
 }`;
@@ -84,7 +83,7 @@ void main() {
         ivec2 offset = ivec2(i, 0);
 #endif
 
-        blur_color += texelFetch(u_render_pass, tex_coords + offset*4, 0).rgb*WEIGHT[abs(i)];
+        blur_color += texelFetch(u_render_pass, tex_coords + offset*3, 0).rgb*WEIGHT[abs(i)];
     }
 
     vec3 scene_color = texelFetch(u_render_pass_2, tex_coords, 0).rgb;
@@ -95,7 +94,7 @@ void main() {
     );
 
 #ifndef IS_FIRST_FX_PASS
-    result -= k*k*k*.75*vec3(0.5,1.,1.);
+    result -= k*k*k*.75*vec3(1.,1.,1.);
 #endif
 
     oFragmentColor = vec4(result, 1.);

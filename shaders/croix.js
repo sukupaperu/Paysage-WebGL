@@ -59,9 +59,8 @@ uniform vec3 u_light_dir;
 uniform vec3 u_ka;
 uniform vec3 u_kd;
 
-uniform bool u_under_water_rendering;
-
-// float rand(in vec2 st) { return fract(sin(dot(st.xy,vec2(12.9898,78.233)))*43758.585); }
+uniform bool u_under_water_only;
+uniform bool u_above_water_only;
 
 vec3 phongModel(vec3 n, float ks, float kn) {
     vec3 nd = n;
@@ -77,12 +76,15 @@ vec3 phongModel(vec3 n, float ks, float kn) {
 }
 
 void main() {
-    if(!u_under_water_rendering && world_pos.y < 0.)
+    if(u_under_water_only && world_pos.y > 0.)
+        discard;
+    if(u_above_water_only && world_pos.y < 0.)
         discard;
     
     vec3 ld = normalize(-u_light_dir);
 
     vec3 c = phongModel(world_normal, 0., 0.);
-    c = mix(vec3(1.,0.5,0.5)*c, c, smoothstep(-.2,.2,world_pos.y));
-    oFragmentColor = vec4(c, /*tex.a*/ 1.);
+    c = mix(.5*c, c, smoothstep(-.2,.2,world_pos.y));
+
+    oFragmentColor = vec4(c, 1.);
 }`;

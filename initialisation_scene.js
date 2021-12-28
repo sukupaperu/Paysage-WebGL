@@ -10,7 +10,6 @@ function init_wgl(action_fin_chargement) {
     skybox.shaderProgram = ShaderProgram(skybox.vs_src, skybox.fs_src, 'Shader skybox');
     skybox.mesh = Mesh.Cube().renderer(1);
     skybox.textures[0] = obj_chargement.loadCubeMap(["textures/skybox/skybox1/right.bmp", "textures/skybox/skybox1/left.bmp", "textures/skybox/skybox1/top.bmp", "textures/skybox/skybox1/bottom.bmp", "textures/skybox/skybox1/front.bmp", "textures/skybox/skybox1/back.bmp"]);
-    /*skybox.textures[1] = obj_chargement.loadCubeMap(["textures/skybox/skybox3/px.webp", "textures/skybox/skybox3/nx.webp", "textures/skybox/skybox3/py.webp", "textures/skybox/skybox3/ny.webp", "textures/skybox/skybox3/pz.webp", "textures/skybox/skybox3/nz.webp"]);*/
     skybox.textures[1] = obj_chargement.loadCubeMap(["textures/skybox/skybox2/right.png", "textures/skybox/skybox2/left.png", "textures/skybox/skybox2/top.png", "textures/skybox/skybox2/bottom.png", "textures/skybox/skybox2/back.png", "textures/skybox/skybox2/front.png"]);
 
 
@@ -80,10 +79,16 @@ function init_wgl(action_fin_chargement) {
     // paramètre de scène et de caméra
     ewgl.scene_camera.set_scene_radius(100);
     ewgl.continuous_update = true;
-    ewgl.scene_camera.set_fov(30);
-    ewgl.scene_camera.look(Vec3(0.,.5,-2.), Vec3(0.,-.5,2.), Vec3(0.,1.,0.));
+    ewgl.scene_camera.set_fov(90);
+    ewgl.scene_camera.look(Vec3(0.,.5,-1.25), Vec3(0.,-.5,1.25), Vec3(0.,1.,0.));
+    console.log(ewgl.scene_camera.get_look_info());
 
+    // 1.4659292697906494, 1.1604222059249878, -1.4856117963790894
 
+    // -0.6136123538017273, -0.5161128640174866, 0.5975846648216248
+
+    // 0.001725912094116211, -0.07112765312194824, -0.05965375900268555
+    // -0.018605556339025497, 0.7660529613494873, 0.6425082683563232
     // On indique à l'objet de chargement que tous les éléments à charger ont été déclarés et qu'il n'y en aura donc pas d'autre
     obj_chargement.setReady();
 }

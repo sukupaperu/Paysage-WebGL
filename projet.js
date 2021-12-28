@@ -27,15 +27,14 @@ const croix = initMeshObject();
 const fx = [
     initMeshObject(),
     initMeshObject(),
-    initMeshObject(),
     initMeshObject()
 ];
 
 // Lumière de la scène
 const lights = {
-    direction: Vec3(10, 8, 0),
+    direction: Vec3(0, 8, 0),
     ambiant: Vec3(.5),
-    diffuse: Vec3(1)
+    diffuse: Vec3(.75)
 };
 
 // Des matrices que l'on va réutiliser dans le rendu
@@ -63,8 +62,8 @@ function draw_wgl() {
     */
    for(let pass = 0; pass <= 2; pass++) {
 
-        let under_water_rendering = pass >= 1;
-        let above_water_rendering = pass !== 1;
+        let under_water_only = pass === 1;
+        let above_water_only = pass === 0;
         
         view_matrix = ewgl.scene_camera.get_view_matrix();
         skybox_matrix = ewgl.scene_camera.get_matrix_for_skybox();
@@ -114,7 +113,8 @@ function draw_wgl() {
             Uniforms.u_color_texture_1 = terrain.textures[2].bind(2);
             Uniforms.u_color_texture_2 = terrain.textures[3].bind(3);
             Uniforms.u_normal_texture_1 = terrain.textures[4].bind(4);
-            Uniforms.u_under_water_rendering = under_water_rendering;
+            Uniforms.u_under_water_only = under_water_only;
+            Uniforms.u_above_water_only = above_water_only;
         terrain.mesh.draw(gl.TRIANGLES);
 
 
@@ -122,11 +122,12 @@ function draw_wgl() {
         croix.shaderProgram.bind();
             setMvpUniforms(Uniforms, model_matrix, view_matrix, projection_matrix);
             setLightUniforms(Uniforms, lights);
-            Uniforms.u_under_water_rendering = under_water_rendering;
-        croix.mesh.draw(gl.TRIANGLES, 100);
+            Uniforms.u_under_water_only = under_water_only;
+            Uniforms.u_above_water_only = above_water_only;
+        croix.mesh.draw(gl.TRIANGLES, 150);
         
 
-        if(above_water_rendering) {
+        if(!under_water_only) {
 
             // Rendu des herbes
             herbes.shaderProgram.bind();
@@ -135,8 +136,7 @@ function draw_wgl() {
                 setLightUniforms(Uniforms, lights);
                 setTimeUniform(Uniforms);
                 Uniforms.u_height_texture = terrain.textures[0].bind(0);
-                // Uniforms.u_color_texture = herbes.texture.bind(1);
-            herbes.mesh.draw(gl.TRIANGLES, pass === 2 ? 1 : .5);
+            herbes.mesh.draw(gl.TRIANGLES, 1);
 
         }
     }
@@ -148,6 +148,7 @@ function draw_wgl() {
         setCameraPosUniform(Uniforms, view_matrix);
         // setLightUniforms(Uniforms, lights);
         setTimeUniform(Uniforms);
+        Uniforms.u_light_dir = lights.direction;
         setResolutionUniform(Uniforms, gl);
         Uniforms.u_distortion = plan_eau.textures[0].bind(0);
         Uniforms.u_reflexion = plan_eau.textures[1].bind(1);
@@ -165,15 +166,12 @@ function draw_wgl() {
 
     // Rendu post-processing
     fx[1].fbos[0].bind();
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     fx[0].shaderProgram.bind();
         Uniforms.u_render_pass = fx[0].texture.bind(0);
 	gl.drawArrays(gl.TRIANGLES, 0, 3);
 
     fx[2].fbos[0].bind();
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     fx[1].shaderProgram.bind();
         Uniforms.u_render_pass = fx[1].texture.bind(0);
 	gl.drawArrays(gl.TRIANGLES, 0, 3);

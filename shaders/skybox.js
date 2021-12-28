@@ -37,5 +37,5 @@ void main() {
 	float a = abs(atan(st.x, st.z))*.5;
 	vec3 c = mix(c0, c1, anim1(u_time*.1 + a, .2));
 
-	oFragmentColor = vec4(c.rgb*vec3(1.,.7,1.)*.5, 1.);
+	oFragmentColor = vec4(c.rgb, 1.);
 }`;
