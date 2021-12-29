@@ -9,18 +9,18 @@ function init_wgl(action_fin_chargement) {
     // Skybox
     skybox.shaderProgram = ShaderProgram(skybox.vs_src, skybox.fs_src, 'Shader skybox');
     skybox.mesh = Mesh.Cube().renderer(1);
-    skybox.textures[0] = obj_chargement.loadCubeMap(["textures/skybox/skybox1/right.bmp", "textures/skybox/skybox1/left.bmp", "textures/skybox/skybox1/top.bmp", "textures/skybox/skybox1/bottom.bmp", "textures/skybox/skybox1/front.bmp", "textures/skybox/skybox1/back.bmp"]);
-    skybox.textures[1] = obj_chargement.loadCubeMap(["textures/skybox/skybox2/right.png", "textures/skybox/skybox2/left.png", "textures/skybox/skybox2/top.png", "textures/skybox/skybox2/bottom.png", "textures/skybox/skybox2/back.png", "textures/skybox/skybox2/front.png"]);
+    skybox.textures[0] = obj_chargement.loadCubeMap(["textures/skybox/skybox1/right.webp", "textures/skybox/skybox1/left.webp", "textures/skybox/skybox1/top.webp", "textures/skybox/skybox1/bottom.webp", "textures/skybox/skybox1/front.webp", "textures/skybox/skybox1/back.webp"]);
+    skybox.textures[1] = obj_chargement.loadCubeMap(["textures/skybox/skybox2/right.webp", "textures/skybox/skybox2/left.webp", "textures/skybox/skybox2/top.webp", "textures/skybox/skybox2/bottom.webp", "textures/skybox/skybox2/back.webp", "textures/skybox/skybox2/front.webp"]);
 
 
     // Terrain/sol
     terrain.shaderProgram = ShaderProgram(terrain.vs_src, terrain.fs_src, 'Shader terrain');
     terrain.mesh = meshGrille(40, terrain.shaderProgram.in.position_in, true, 50);
-    terrain.textures[0] = obj_chargement.loadTexture("textures/terrain_hm.png", gl.R8);
-    terrain.textures[1] = obj_chargement.loadTexture("textures/material/terre_albedo.png");
-    terrain.textures[2] = obj_chargement.loadTexture("textures/material/gravier_albedo.png");
-    terrain.textures[3] = obj_chargement.loadTexture("textures/material/sable_albedo.png");
-    terrain.textures[4] = obj_chargement.loadTexture("textures/material/gravier_normal.png");
+    terrain.textures[0] = obj_chargement.loadTexture("textures/terrain_hm.webp", gl.R8);
+    terrain.textures[1] = obj_chargement.loadTexture("textures/material/terre_albedo.webp");
+    terrain.textures[2] = obj_chargement.loadTexture("textures/material/gravier_albedo.webp");
+    terrain.textures[3] = obj_chargement.loadTexture("textures/material/sable_albedo.webp");
+    terrain.textures[4] = obj_chargement.loadTexture("textures/material/gravier_normal.webp");
 
 
     // Herbes sur l'île
@@ -32,7 +32,7 @@ function init_wgl(action_fin_chargement) {
     plan_eau.shaderProgram = ShaderProgram(plan_eau.vs_src, plan_eau.fs_src, 'Shader eau');
     plan_eau.model = Matrix.scale(100);
     plan_eau.mesh = meshGrille(1, plan_eau.shaderProgram.in.position_in);
-    plan_eau.textures[0] = obj_chargement.loadTexture("textures/distortion_map.png", gl.RG8);
+    plan_eau.textures[0] = obj_chargement.loadTexture("textures/distortion_map.webp", gl.RG8);
     // plan_eau.textures[1] = obj_chargement.loadTexture("textures/normal_map.png");
     plan_eau.textures[1] = initTextureForFBO();
     plan_eau.textures[2] = initTextureForFBO();
