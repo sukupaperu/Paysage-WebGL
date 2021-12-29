@@ -59,7 +59,6 @@ uniform sampler2D u_color_texture_1;
 uniform sampler2D u_color_texture_2;
 uniform sampler2D u_normal_texture_1;
 
-// uniform bool u_under_water_rendering;
 uniform bool u_under_water_only;
 uniform bool u_above_water_only;
 
@@ -77,8 +76,6 @@ vec3 phongModel(vec3 n, float ks, float kn) {
 }
 
 void main() {
-    /*if(!u_under_water_rendering && world_pos.y < 0.)
-        discard;*/
     if(u_under_water_only && world_pos.y > 0.)
         discard;
     if(u_above_water_only && world_pos.y < 0.)
@@ -88,6 +85,7 @@ void main() {
     vec2 texCoord = tex_coord*sz;
     float isGravier = 1. - clamp(abs(pow((model_pos.y + .02)*20., 3.)), 0., 1.);
 
+    // déterminer la normale 
     vec3 n = texture(u_normal_texture_1, texCoord).xyz;
     vec3 normal = normalize((world_normal + normalize(n.xzy - .5))*.5);
 
@@ -95,9 +93,11 @@ void main() {
     vec3 c1 = texture(u_color_texture_1, texCoord).xyz;
     vec3 c2 = texture(u_color_texture_2, texCoord).xyz;
 
+    // mixage de la bonne texture en fonction de l'altitude
     vec3 color = phongModel(normal, isGravier, 10.)
         *mix(mix(c0, c2, step(model_pos.y, 0.)), c1, isGravier);
 
+    // application d'une couleur plus sombre pour le fond de l'eau avec teinte bleutée
     color += min(0., -model_pos.y*model_pos.y*10.)*vec3(1.,1.,.6);
 
     oFragmentColor = vec4(color, 1.);

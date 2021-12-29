@@ -50,7 +50,6 @@ void main() {
 
     vec3 p_in = position_in;
     p_in.z += cos(p_in.y*3.)*.3;
-    // p_in.xz += rd*.012;
 
     mat2 randomRot = rot(rd.x*rd.y*6.28);
     p_in.xz *= randomRot;
@@ -109,10 +108,13 @@ vec3 phongModel(vec3 n, float ks, float kn) {
 }
 
 void main() {
-    const vec3 coul1 = vec3(0.208,0.825,0.289);//vec3(.9,.9,1.)
-    const vec3 coul2 = vec3(0.962,1.000,0.410);//vec3(1.,.9,.9)
+    const vec3 coul1 = vec3(0.208,0.825,0.289);
+    const vec3 coul2 = vec3(0.962,1.000,0.410);
+
+    // variation de teinte d'un brin à un autre
     vec3 coul3 = mix(coul1, coul2, instance_random);
 
+    // variation de luminosité en fonction de la hauteur sur le brin
     vec3 color = mix(
         coul3*vec3(.23,.25,.13),
         coul3,
@@ -121,5 +123,5 @@ void main() {
 
     color *= phongModel(world_normal, 1., 1.);
 
-    oFragmentColor = vec4(color, /*tex.a*/ 1.);
+    oFragmentColor = vec4(color, 1.);
 }`;

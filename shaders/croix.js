@@ -80,8 +80,6 @@ void main() {
         discard;
     if(u_above_water_only && world_pos.y < 0.)
         discard;
-    
-    vec3 ld = normalize(-u_light_dir);
 
     vec3 c = phongModel(world_normal, 0., 0.);
     c = mix(.5*c, c, smoothstep(-.2,.2,world_pos.y));

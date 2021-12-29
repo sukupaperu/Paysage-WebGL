@@ -29,13 +29,16 @@ float anim1(float x, float sm){ float xmd = mod(x,2.) - .5; return smoothstep(-s
 
 void main() {
 	vec3 st = tex_coord;
+
+	// animation de rotation du fonds
 	st.xz *= rot(u_time*.01);
 
 	vec3 c0 = texture(u_texture_skybox_0, st).rgb;
 	vec3 c1 = texture(u_texture_skybox_1, st).rgb;
 
+	// animation de transition entre les fonds
 	float a = abs(atan(st.x, st.z))*.5;
 	vec3 c = mix(c0, c1, anim1(u_time*.1 + a, .2));
 
-	oFragmentColor = vec4(c.rgb, 1.);
+	oFragmentColor = vec4(c, 1.);
 }`;

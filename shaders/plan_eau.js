@@ -15,7 +15,7 @@ out vec3 model_pos;
 out vec3 world_pos;
 
 void main() {
-    vec3 rawModelPos = position_in + cos(u_time)*10e-6;
+    vec3 rawModelPos = position_in;
     vec3 modelPos = rawModelPos;
     vec4 worldPos = u_model*vec4(modelPos, 1.);
 

@@ -81,14 +81,8 @@ function init_wgl(action_fin_chargement) {
     ewgl.continuous_update = true;
     ewgl.scene_camera.set_fov(90);
     ewgl.scene_camera.look(Vec3(0.,.5,-1.25), Vec3(0.,-.5,1.25), Vec3(0.,1.,0.));
-    console.log(ewgl.scene_camera.get_look_info());
 
-    // 1.4659292697906494, 1.1604222059249878, -1.4856117963790894
-
-    // -0.6136123538017273, -0.5161128640174866, 0.5975846648216248
-
-    // 0.001725912094116211, -0.07112765312194824, -0.05965375900268555
-    // -0.018605556339025497, 0.7660529613494873, 0.6425082683563232
+    
     // On indique à l'objet de chargement que tous les éléments à charger ont été déclarés et qu'il n'y en aura donc pas d'autre
     obj_chargement.setReady();
 }

@@ -73,9 +73,9 @@ mat2 rot(float a) { return mat2(cos(a),sin(a),-sin(a),cos(a)); }
 
 void main() {
     vec2 st = tex_coord;
-
-    float d = length(st) - .5;
-    d = 1. - smoothstep(-.5, 0., d);
+    
+    // utilisation d'une SDF pour calculer un dégradé radial
+    float d = 1. - smoothstep(-.5, 0., length(st) - .5);
 
 	oFragmentColor = vec4(vec3(1.), d*d*d);
 }`;
